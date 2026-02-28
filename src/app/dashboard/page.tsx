@@ -7,10 +7,10 @@ import { LandlordView } from "./_components/LandlordView";
 import { TenantView } from "./_components/TenantView";
 import { NotaryView } from "./_components/NotaryView";
 
-const ROLES: { id: Role; label: string; icon: string }[] = [
-  { id: "landlord", label: "Landlord", icon: "🏠" },
-  { id: "tenant", label: "Tenant", icon: "🔑" },
-  { id: "notary", label: "Notary", icon: "⚖️" },
+const ROLES: { id: Role; label: string }[] = [
+  { id: "landlord", label: "Landlord" },
+  { id: "tenant", label: "Tenant" },
+  { id: "notary", label: "Notary" },
 ];
 
 export default function DashboardPage() {
@@ -56,7 +56,6 @@ export default function DashboardPage() {
                   : "border-transparent text-neutral-500 hover:text-neutral-300"
               }`}
             >
-              <span>{role.icon}</span>
               {role.label}
             </button>
           ))}
