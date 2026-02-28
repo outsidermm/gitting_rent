@@ -44,7 +44,7 @@ export function NotaryView() {
             <AuditPanel
               key={lease.id}
               lease={lease}
-              notaryAddress={address!}
+              _notaryAddress={address!}
               onApproved={() => void refetch()}
             />
           ))}
@@ -74,11 +74,11 @@ export function NotaryView() {
 
 function AuditPanel({
   lease,
-  notaryAddress,
+  _notaryAddress,
   onApproved,
 }: {
   lease: Lease;
-  notaryAddress: string;
+  _notaryAddress: string;
   onApproved: () => void;
 }) {
   const xrpAmount = dropsToXrp(lease.bondAmountDrops);

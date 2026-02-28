@@ -11,7 +11,6 @@
 
 import { useState } from "react";
 import { Wallet, Client, dropsToXrp } from "xrpl";
-import type { EscrowFinish } from "xrpl";
 import { useWallet } from "~/context/WalletContext";
 import { api } from "~/trpc/react";
 
@@ -52,7 +51,7 @@ export function EscrowFinishFlow({ leaseId, onSuccess }: Props) {
       client = new Client(DEVNET_WSS);
       await client.connect();
 
-      const partialTx = data.tx as EscrowFinish;
+      const partialTx = data.tx;
 
       // Compute elevated fee: 10 * ceil((33 + fulfillment_bytes) / 16)
       const fulfillmentBytes = Math.ceil(partialTx.Fulfillment!.length / 2);
