@@ -114,7 +114,7 @@ export function EscrowCreateFlow({
   const xrpAmount = dropsToXrp(data.lease.bondAmountDrops);
 
   return (
-    <div className="space-y-4 rounded-xl border border-blue-900/50 bg-blue-950/20 p-5">
+    <div className="space-y-4">
       <h4 className="font-medium text-blue-300">Deposit Bond</h4>
 
       {step === "done" ? (
@@ -129,7 +129,7 @@ export function EscrowCreateFlow({
       ) : (
         <>
           {/* Summary */}
-          <div className="space-y-1 rounded-lg border border-blue-900/40 bg-blue-950/30 p-4 text-sm">
+          <div className="space-y-1 text-sm">
             <Row label="Amount" value={`${xrpAmount} XRP`} />
             <Row
               label="Landlord"

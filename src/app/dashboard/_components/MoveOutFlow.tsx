@@ -83,7 +83,7 @@ export function MoveOutFlow({
   return (
     <form
       onSubmit={handleSubmit}
-      className="space-y-5 rounded-xl border border-orange-900/40 bg-orange-950/10 p-5"
+      className="space-y-5"
     >
       <h4 className="font-semibold text-orange-300">Move-Out Report</h4>
 

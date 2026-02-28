@@ -84,7 +84,7 @@ function TenantActions({ lease, tenantAddress, onUpdate }: TenantActionsProps) {
           {activeFlow === "escrow" ? "Cancel" : "Deposit Bond →"}
         </button>
         {activeFlow === "escrow" && (
-          <div className="mt-4">
+          <div className="mt-3 border-t border-neutral-800 pt-4">
             <EscrowCreateFlow
               leaseId={lease.id}
               onSuccess={() => {
@@ -110,7 +110,7 @@ function TenantActions({ lease, tenantAddress, onUpdate }: TenantActionsProps) {
           {activeFlow === "moveout" ? "Cancel" : "Submit Move-Out →"}
         </button>
         {activeFlow === "moveout" && (
-          <div className="mt-4">
+          <div className="mt-3 border-t border-neutral-800 pt-4">
             <MoveOutFlow
               leaseId={lease.id}
               callerAddress={tenantAddress}
