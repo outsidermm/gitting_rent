@@ -19,11 +19,10 @@ import {
   useState,
   type ReactNode,
 } from "react";
+
 import { Client, Wallet, dropsToXrp } from "xrpl";
-
-const DEVNET_WSS = "wss://s.devnet.rippletest.net:51233";
-
-export type Role = "landlord" | "tenant" | "notary";
+import { DEVNET_WSS } from "~/app/constants";
+import type { Role } from "~/types/role";
 
 interface WalletState {
   address: string | null;

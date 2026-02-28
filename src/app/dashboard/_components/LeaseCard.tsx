@@ -1,10 +1,8 @@
 "use client";
 
-import { type RouterOutputs } from "~/trpc/react";
 import { dropsToXrp } from "xrpl";
-
-type Lease = RouterOutputs["lease"]["getByAddress"][number];
-type Perspective = "landlord" | "tenant" | "notary";
+import type { Role } from "~/types/role";
+import type { Lease } from "~/types/lease";
 
 const STATUS_LABELS: Record<string, string> = {
   PENDING_ESCROW: "Awaiting Escrow",
@@ -22,7 +20,7 @@ const STATUS_COLORS: Record<string, string> = {
 
 interface LeaseCardProps {
   lease: Lease;
-  perspective: Perspective;
+  perspective: Role;
   actions?: React.ReactNode;
 }
 

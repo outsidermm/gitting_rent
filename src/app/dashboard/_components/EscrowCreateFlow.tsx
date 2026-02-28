@@ -14,22 +14,23 @@ import { Wallet, Client, dropsToXrp } from "xrpl";
 import type { EscrowCreate } from "xrpl";
 import { useWallet } from "~/context/WalletContext";
 import { api } from "~/trpc/react";
+import type { Step } from "~/types/step";
+import { Row } from "~/app/ui/row";
+import { DEVNET_WSS } from "~/app/constants";
 
-const DEVNET_WSS = "wss://s.devnet.rippletest.net:51233";
-
-interface Props {
+interface EscrowCreateFlowProps {
   leaseId: string;
   onSuccess: () => void;
 }
 
-type Step = "review" | "signing" | "confirming" | "done";
-
-export function EscrowCreateFlow({ leaseId, onSuccess }: Props) {
+export function EscrowCreateFlow({
+  leaseId,
+  onSuccess,
+}: EscrowCreateFlowProps) {
   const { seed, address } = useWallet();
   const [step, setStep] = useState<Step>("review");
   const [error, setError] = useState("");
   const [txHash, setTxHash] = useState("");
-  const [debugInfo, setDebugInfo] = useState("");
 
   const {
     data,
@@ -39,14 +40,13 @@ export function EscrowCreateFlow({ leaseId, onSuccess }: Props) {
 
   const confirmEscrow = api.lease.confirmEscrow.useMutation({
     onSuccess,
-    onError: (e) => setError(`Backend confirmation failed: ${e.message}`),
+    onError: () => setError("Your deposit was placed on-chain but we could not update the lease. Please refresh and check your lease status."),
   });
 
   async function signAndSubmit() {
     if (!seed || !data) return;
     setStep("signing");
     setError("");
-    setDebugInfo("");
 
     let client: Client | null = null;
 
@@ -59,23 +59,7 @@ export function EscrowCreateFlow({ leaseId, onSuccess }: Props) {
       // fields (TransactionType, Account, Amount, Destination) are always set.
       const partialTx = data.tx as EscrowCreate;
 
-      // autofill adds: Sequence, Fee (elevated for condition tx), LastLedgerSequence
       const prepared = await client.autofill(partialTx);
-
-      // Log the exact prepared tx so temMALFORMED can be diagnosed
-      console.debug(
-        "[EscrowCreate] prepared tx:",
-        JSON.stringify(prepared, null, 2),
-      );
-      const amountStr =
-        typeof prepared.Amount === "string"
-          ? prepared.Amount
-          : JSON.stringify(prepared.Amount);
-      setDebugInfo(
-        `Condition: ${prepared.Condition?.slice(0, 20) ?? "missing"}… | ` +
-          `Amount: ${amountStr} drops | ` +
-          `Seq: ${String(prepared.Sequence)}`,
-      );
 
       const { tx_blob, hash } = wallet.sign(prepared);
       setStep("confirming");
@@ -86,16 +70,8 @@ export function EscrowCreateFlow({ leaseId, onSuccess }: Props) {
         | undefined;
       const txResult = meta?.TransactionResult;
 
-      console.debug(
-        "[EscrowCreate] result:",
-        JSON.stringify(result.result, null, 2),
-      );
-
       if (txResult !== "tesSUCCESS") {
-        throw new Error(
-          `Transaction not accepted: ${txResult ?? "no result code"}. ` +
-            `Check browser console for the full prepared tx.`,
-        );
+        throw new Error("Your deposit could not be placed. Please try again.");
       }
 
       // The sequence number used in EscrowCreate becomes OfferSequence in EscrowFinish
@@ -113,7 +89,7 @@ export function EscrowCreateFlow({ leaseId, onSuccess }: Props) {
 
       setStep("done");
     } catch (e: unknown) {
-      const msg = e instanceof Error ? e.message : "Unknown error";
+      const msg = e instanceof Error ? e.message : "Something went wrong. Please try again.";
       setError(msg);
       setStep("review");
     } finally {
@@ -130,7 +106,7 @@ export function EscrowCreateFlow({ leaseId, onSuccess }: Props) {
   if (queryError ?? !data) {
     return (
       <p className="text-sm text-red-400">
-        {queryError?.message ?? "Failed to load escrow payload."}
+        Unable to load deposit details. Please refresh and try again.
       </p>
     );
   }
@@ -160,15 +136,9 @@ export function EscrowCreateFlow({ leaseId, onSuccess }: Props) {
               value={`${data.lease.landlordAddress.slice(0, 14)}…`}
               mono
             />
-            <Row label="Release mechanism" value="Notary PREIMAGE-SHA-256" />
-            <Row label="Cancel after" value="90 days (tenant safety valve)" />
+            <Row label="Release" value="Approved by notary" />
+            <Row label="Cancellation" value="Available after 90 days" />
           </div>
-
-          {debugInfo && (
-            <p className="rounded bg-neutral-800 px-2 py-1 font-mono text-xs break-all text-neutral-400">
-              {debugInfo}
-            </p>
-          )}
 
           {error && (
             <p className="rounded-lg bg-red-950/60 px-3 py-2 text-xs whitespace-pre-wrap text-red-400">
@@ -188,32 +158,11 @@ export function EscrowCreateFlow({ leaseId, onSuccess }: Props) {
             >
               {step === "review" && "Sign & Lock Bond"}
               {step === "signing" && "Signing…"}
-              {step === "confirming" && "Confirming on XRPL Devnet…"}
+              {step === "confirming" && "Confirming on network…"}
             </button>
           )}
         </>
       )}
-    </div>
-  );
-}
-
-function Row({
-  label,
-  value,
-  mono,
-}: {
-  label: string;
-  value: string;
-  mono?: boolean;
-}) {
-  return (
-    <div className="flex justify-between gap-4">
-      <span className="text-neutral-500">{label}</span>
-      <span
-        className={`text-right ${mono ? "font-mono text-xs" : ""} text-neutral-200`}
-      >
-        {value}
-      </span>
     </div>
   );
 }

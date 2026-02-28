@@ -7,7 +7,7 @@
  */
 
 import type { EscrowCreate, EscrowFinish } from "xrpl";
-import { xrpToDrops, dropsToXrp } from "xrpl";
+import { xrpToDrops } from "xrpl";
 
 // ─── epoch helpers ───────────────────────────────────────────────────────────
 
@@ -15,7 +15,7 @@ import { xrpToDrops, dropsToXrp } from "xrpl";
 const RIPPLE_EPOCH_OFFSET = 946_684_800;
 
 /** Current time expressed in Ripple epoch seconds. */
-export function nowRippleEpoch(): number {
+function nowRippleEpoch(): number {
   return Math.floor(Date.now() / 1000) - RIPPLE_EPOCH_OFFSET;
 }
 
@@ -88,6 +88,4 @@ export function buildEscrowFinishPayload(
   };
 }
 
-// ─── re-exports ──────────────────────────────────────────────────────────────
-
-export { xrpToDrops, dropsToXrp };
+export { xrpToDrops };

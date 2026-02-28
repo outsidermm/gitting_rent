@@ -32,7 +32,7 @@ export const confirmEscrow = publicProcedure
     if (lease.status !== "PENDING_ESCROW") {
       throw new TRPCError({
         code: "BAD_REQUEST",
-        message: `Cannot confirm escrow — current status is "${lease.status}".`,
+        message: "This action cannot be completed at the current stage.",
       });
     }
 
