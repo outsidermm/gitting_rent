@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { useWallet } from "~/context/WalletContext";
+import { Waves } from "~/components/ui/wave-background";
 
 export default function HomePage() {
   const { connect, isConnected } = useWallet();
@@ -33,11 +34,17 @@ export default function HomePage() {
   }
 
   return (
-    <main className="flex min-h-screen flex-col items-center justify-center px-4">
-      <div className="w-full max-w-md space-y-8">
+    <main className="relative flex min-h-screen flex-col items-center justify-center px-4">
+      <Waves
+        className="pointer-events-auto"
+        strokeColor="rgba(255, 255, 255, 0.15)"
+        backgroundColor="transparent"
+      />
+
+      <div className="relative z-10 w-full max-w-md space-y-8">
         {/* Header */}
         <div className="space-y-2 text-center">
-          <div className="inline-flex h-14 w-14 items-center justify-center rounded-full border border-neutral-700 bg-neutral-900 text-2xl">
+          <div className="inline-flex h-14 w-14 items-center justify-center rounded-full border border-neutral-700 bg-neutral-900/80 text-2xl backdrop-blur-sm">
             🔐
           </div>
           <h1 className="text-3xl font-semibold tracking-tight">
@@ -53,7 +60,7 @@ export default function HomePage() {
           {(["Landlord", "Tenant", "Notary"] as const).map((r) => (
             <span
               key={r}
-              className="rounded-full border border-neutral-700 px-3 py-0.5 text-xs text-neutral-400"
+              className="rounded-full border border-neutral-700 bg-neutral-900/60 px-3 py-0.5 text-xs text-neutral-400 backdrop-blur-sm"
             >
               {r}
             </span>
@@ -63,7 +70,7 @@ export default function HomePage() {
         {/* Connect form */}
         <form
           onSubmit={handleConnect}
-          className="space-y-4 rounded-xl border border-neutral-800 bg-neutral-900 p-6"
+          className="space-y-4 rounded-xl border border-neutral-800 bg-neutral-900/80 p-6 backdrop-blur-md"
         >
           <div className="space-y-1.5">
             <label
@@ -79,7 +86,7 @@ export default function HomePage() {
               placeholder="sXXXXXXXXXXXXXXXXXXXXXX"
               value={seed}
               onChange={(e) => setSeed(e.target.value)}
-              className="w-full rounded-lg border border-neutral-700 bg-neutral-800 px-3 py-2 text-sm text-neutral-100 placeholder-neutral-500 outline-none focus:border-neutral-500 focus:ring-0"
+              className="w-full rounded-lg border border-neutral-700 bg-neutral-800/90 px-3 py-2 text-sm text-neutral-100 placeholder-neutral-500 outline-none focus:border-neutral-500 focus:ring-0"
             />
             <p className="text-xs text-neutral-500">
               Stored in memory only. Use an XRPL Devnet wallet —{" "}
