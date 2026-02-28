@@ -31,6 +31,8 @@
     "@trpc/client": "^11.10.0",
     "@trpc/react-query": "^11.10.0",
     "@trpc/server": "^11.10.0",
+    "clsx": "^2.1.1",
+    "framer-motion": "^12.34.3",
     "next": "^15.5.12",
     "pg": "^8.19.0",
     "react": "^19.2.4",
@@ -38,6 +40,7 @@
     "server-only": "^0.0.1",
     "simplex-noise": "^4.0.3",
     "superjson": "^2.2.6",
+    "tailwind-merge": "^3.5.0",
     "xrpl": "^4.6.0",
     "zod": "^3.25.76"
   },

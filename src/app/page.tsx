@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { useWallet } from "~/context/WalletContext";
 import { Waves } from "~/components/ui/wave-background";
+import { Button } from "~/components/ui/button";
 
 export default function HomePage() {
   const { connect, isConnected } = useWallet();
@@ -88,7 +89,7 @@ export default function HomePage() {
             <p className="text-xs text-neutral-500">
               Stored in memory only. Use an XRPL Devnet wallet —{" "}
               <a
-                href="https://faucet.devnet.rippletest.net/accounts"
+                href="https://xrpl.org/resources/dev-tools/xrp-faucets"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-neutral-400 underline underline-offset-2"
@@ -105,13 +106,13 @@ export default function HomePage() {
             </p>
           )}
 
-          <button
+          <Button
             type="submit"
             disabled={loading || !seed.trim()}
-            className="w-full rounded-lg bg-neutral-100 py-2.5 text-sm font-semibold text-neutral-900 transition hover:bg-white disabled:cursor-not-allowed disabled:opacity-40"
+            className="w-full bg-neutral-100 py-2.5 text-sm font-semibold text-neutral-900 transition hover:bg-white disabled:cursor-not-allowed disabled:opacity-40"
           >
             {loading ? "Connecting…" : "Connect Wallet"}
-          </button>
+          </Button>
         </form>
 
         <p className="text-center text-xs text-neutral-600">
