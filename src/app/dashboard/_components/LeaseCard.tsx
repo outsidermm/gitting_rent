@@ -3,6 +3,8 @@
 import { dropsToXrp } from "xrpl";
 import type { Role } from "~/types/role";
 import type { Lease } from "~/types/lease";
+import { PhotoStrip } from "~/app/ui/photo-strip";
+import { AddressChip } from "~/app/ui/address-chip";
 
 const STATUS_LABELS: Record<string, string> = {
   PENDING_ESCROW: "Awaiting Escrow",
@@ -125,51 +127,3 @@ export function LeaseCard({ lease, perspective, actions }: LeaseCardProps) {
   );
 }
 
-function PhotoStrip({ urls }: { urls: string[] }) {
-  return (
-    <div className="flex gap-2 overflow-x-auto pb-1">
-      {urls.map((url, i) => (
-        <a
-          key={i}
-          href={url}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="group shrink-0 overflow-hidden rounded-lg border border-neutral-700 transition hover:border-neutral-500"
-        >
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src={url}
-            alt={`photo ${i + 1}`}
-            className="h-20 w-20 object-cover transition group-hover:brightness-110"
-            onError={(e) => {
-              (e.target as HTMLImageElement).style.display = "none";
-            }}
-          />
-        </a>
-      ))}
-    </div>
-  );
-}
-
-function AddressChip({
-  label,
-  address,
-  highlight,
-}: {
-  label: string;
-  address: string;
-  highlight: boolean;
-}) {
-  return (
-    <div
-      className={`rounded-lg px-3 py-2 text-xs ${
-        highlight ? "bg-neutral-700/50" : "bg-neutral-800/40"
-      }`}
-    >
-      <p className="text-neutral-500">{label}</p>
-      <p className="truncate font-mono text-neutral-300">
-        {address.slice(0, 10)}…
-      </p>
-    </div>
-  );
-}
