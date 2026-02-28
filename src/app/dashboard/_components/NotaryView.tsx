@@ -26,7 +26,7 @@ export function NotaryView() {
   );
 
   return (
-    <div className="mx-auto max-w-3xl space-y-8">
+    <div className="space-y-8">
       <div>
         <h2 className="text-lg font-semibold">Notary Audits</h2>
         <p className="text-sm text-neutral-500">

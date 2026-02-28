@@ -24,7 +24,7 @@ export function TenantView() {
 
   if (!tenantLeases?.length) {
     return (
-      <div className="mx-auto max-w-2xl space-y-4">
+      <div className="space-y-4">
         <h2 className="text-lg font-semibold">Your Leases</h2>
         <p className="text-sm text-neutral-500">
           No leases found for your address. Ask your landlord to create one.
@@ -34,7 +34,7 @@ export function TenantView() {
   }
 
   return (
-    <div className="mx-auto max-w-2xl space-y-6">
+    <div className="space-y-6">
       <h2 className="text-lg font-semibold">Your Leases</h2>
       {tenantLeases.map((lease) => (
         <LeaseCard
