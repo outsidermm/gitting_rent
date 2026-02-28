@@ -9,12 +9,17 @@ import { EscrowFinishFlow } from "./EscrowFinishFlow";
 type Lease = RouterOutputs["lease"]["getByAddress"][number];
 
 export function NotaryView() {
-  const { address } = useWallet();
+  const { address, refreshBalance } = useWallet();
 
   const { data: leases, refetch } = api.lease.getByAddress.useQuery(
     { address: address ?? "" },
     { enabled: !!address },
   );
+
+  const handleUpdate = () => {
+    void refetch();
+    void refreshBalance();
+  };
 
   const pendingLeases = leases?.filter(
     (l) => l.notaryAddress === address && l.status === "MOVE_OUT_PENDING",
@@ -43,7 +48,7 @@ export function NotaryView() {
               key={lease.id}
               lease={lease}
               _notaryAddress={address!}
-              onApproved={() => void refetch()}
+              onApproved={handleUpdate}
             />
           ))}
         </div>

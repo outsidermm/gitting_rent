@@ -8,7 +8,7 @@ import { EscrowCreateFlow } from "./EscrowCreateFlow";
 import { MoveOutFlow } from "./MoveOutFlow";
 
 export function TenantView() {
-  const { address } = useWallet();
+  const { address, refreshBalance } = useWallet();
 
   const { data: leases, refetch } = api.lease.getByAddress.useQuery(
     { address: address ?? "" },
@@ -16,6 +16,11 @@ export function TenantView() {
   );
 
   const tenantLeases = leases?.filter((l) => l.tenantAddress === address);
+
+  const handleUpdate = () => {
+    void refetch();
+    void refreshBalance();
+  };
 
   if (!tenantLeases?.length) {
     return (
@@ -40,7 +45,7 @@ export function TenantView() {
             <TenantActions
               lease={lease}
               tenantAddress={address!}
-              onUpdate={() => void refetch()}
+              onUpdate={handleUpdate}
             />
           }
         />

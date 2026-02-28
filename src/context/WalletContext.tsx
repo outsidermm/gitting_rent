@@ -19,24 +19,59 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import { Wallet } from "xrpl";
+import { Client, Wallet, dropsToXrp } from "xrpl";
+
+const DEVNET_WSS = "wss://s.devnet.rippletest.net:51233";
 
 export type Role = "landlord" | "tenant" | "notary";
 
 interface WalletState {
   address: string | null;
-  seed: string | null; // in-memory only; cleared on disconnect
+  seed: string | null;
   isConnected: boolean;
   activeRole: Role;
+  balance: string | null;
 }
 
 interface WalletContextValue extends WalletState {
   connect: (seed: string) => { address: string } | { error: string };
   disconnect: () => void;
   setRole: (role: Role) => void;
+  refreshBalance: () => Promise<void>;
 }
 
 const WalletContext = createContext<WalletContextValue | null>(null);
+
+async function fetchBalance(address: string): Promise<string> {
+  const client = new Client(DEVNET_WSS);
+  try {
+    await client.connect();
+    const accountInfo = await client.request({
+      command: "account_info",
+      account: address,
+    });
+    const balanceXrp = dropsToXrp(
+      accountInfo.result.account_data.Balance,
+    ).toString();
+    return balanceXrp;
+  } catch (e: unknown) {
+    if (
+      typeof e === "object" &&
+      e !== null &&
+      "result" in e &&
+      typeof e.result === "object" &&
+      e.result !== null &&
+      "error" in e.result &&
+      e.result.error === "actNotFound"
+    ) {
+      return "0.00";
+    }
+    console.warn("Balance fetch error:", e);
+    return "0.00";
+  } finally {
+    await client.disconnect();
+  }
+}
 
 export function WalletProvider({ children }: { children: ReactNode }) {
   const [state, setState] = useState<WalletState>({
@@ -44,7 +79,18 @@ export function WalletProvider({ children }: { children: ReactNode }) {
     seed: null,
     isConnected: false,
     activeRole: "landlord",
+    balance: null,
   });
+
+  const refreshBalance = useCallback(async () => {
+    if (!state.address) return;
+    try {
+      const balance = await fetchBalance(state.address);
+      setState((prev) => ({ ...prev, balance }));
+    } catch (e) {
+      console.error("Failed to fetch balance:", e);
+    }
+  }, [state.address]);
 
   const connect = useCallback(
     (seed: string): { address: string } | { error: string } => {
@@ -70,6 +116,7 @@ export function WalletProvider({ children }: { children: ReactNode }) {
       seed: null,
       isConnected: false,
       activeRole: "landlord",
+      balance: null,
     });
   }, []);
 
@@ -78,7 +125,9 @@ export function WalletProvider({ children }: { children: ReactNode }) {
   }, []);
 
   return (
-    <WalletContext.Provider value={{ ...state, connect, disconnect, setRole }}>
+    <WalletContext.Provider
+      value={{ ...state, connect, disconnect, setRole, refreshBalance }}
+    >
       {children}
     </WalletContext.Provider>
   );

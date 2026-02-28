@@ -31,10 +31,11 @@ export function EscrowCreateFlow({ leaseId, onSuccess }: Props) {
   const [txHash, setTxHash] = useState("");
   const [debugInfo, setDebugInfo] = useState("");
 
-  const { data, isLoading, error: queryError } = api.lease.getEscrowCreatePayload.useQuery(
-    { leaseId },
-    { retry: false },
-  );
+  const {
+    data,
+    isLoading,
+    error: queryError,
+  } = api.lease.getEscrowCreatePayload.useQuery({ leaseId }, { retry: false });
 
   const confirmEscrow = api.lease.confirmEscrow.useMutation({
     onSuccess,
@@ -62,27 +63,38 @@ export function EscrowCreateFlow({ leaseId, onSuccess }: Props) {
       const prepared = await client.autofill(partialTx);
 
       // Log the exact prepared tx so temMALFORMED can be diagnosed
-      console.debug("[EscrowCreate] prepared tx:", JSON.stringify(prepared, null, 2));
-      const amountStr = typeof prepared.Amount === "string" ? prepared.Amount : JSON.stringify(prepared.Amount);
+      console.debug(
+        "[EscrowCreate] prepared tx:",
+        JSON.stringify(prepared, null, 2),
+      );
+      const amountStr =
+        typeof prepared.Amount === "string"
+          ? prepared.Amount
+          : JSON.stringify(prepared.Amount);
       setDebugInfo(
         `Condition: ${prepared.Condition?.slice(0, 20) ?? "missing"}… | ` +
-        `Amount: ${amountStr} drops | ` +
-        `Seq: ${String(prepared.Sequence)}`
+          `Amount: ${amountStr} drops | ` +
+          `Seq: ${String(prepared.Sequence)}`,
       );
 
       const { tx_blob, hash } = wallet.sign(prepared);
       setStep("confirming");
 
       const result = await client.submitAndWait(tx_blob);
-      const meta = result.result.meta as { TransactionResult?: string } | undefined;
+      const meta = result.result.meta as
+        | { TransactionResult?: string }
+        | undefined;
       const txResult = meta?.TransactionResult;
 
-      console.debug("[EscrowCreate] result:", JSON.stringify(result.result, null, 2));
+      console.debug(
+        "[EscrowCreate] result:",
+        JSON.stringify(result.result, null, 2),
+      );
 
       if (txResult !== "tesSUCCESS") {
         throw new Error(
           `Transaction not accepted: ${txResult ?? "no result code"}. ` +
-          `Check browser console for the full prepared tx.`
+            `Check browser console for the full prepared tx.`,
         );
       }
 
@@ -133,7 +145,9 @@ export function EscrowCreateFlow({ leaseId, onSuccess }: Props) {
         <div className="space-y-2">
           <p className="text-sm text-green-400">✓ Escrow created on-chain!</p>
           {txHash && (
-            <p className="break-all font-mono text-xs text-neutral-500">tx: {txHash}</p>
+            <p className="font-mono text-xs break-all text-neutral-500">
+              tx: {txHash}
+            </p>
           )}
         </div>
       ) : (
@@ -151,13 +165,13 @@ export function EscrowCreateFlow({ leaseId, onSuccess }: Props) {
           </div>
 
           {debugInfo && (
-            <p className="break-all rounded bg-neutral-800 px-2 py-1 font-mono text-xs text-neutral-400">
+            <p className="rounded bg-neutral-800 px-2 py-1 font-mono text-xs break-all text-neutral-400">
               {debugInfo}
             </p>
           )}
 
           {error && (
-            <p className="whitespace-pre-wrap rounded-lg bg-red-950/60 px-3 py-2 text-xs text-red-400">
+            <p className="rounded-lg bg-red-950/60 px-3 py-2 text-xs whitespace-pre-wrap text-red-400">
               {error}
             </p>
           )}
@@ -183,11 +197,21 @@ export function EscrowCreateFlow({ leaseId, onSuccess }: Props) {
   );
 }
 
-function Row({ label, value, mono }: { label: string; value: string; mono?: boolean }) {
+function Row({
+  label,
+  value,
+  mono,
+}: {
+  label: string;
+  value: string;
+  mono?: boolean;
+}) {
   return (
     <div className="flex justify-between gap-4">
       <span className="text-neutral-500">{label}</span>
-      <span className={`text-right ${mono ? "font-mono text-xs" : ""} text-neutral-200`}>
+      <span
+        className={`text-right ${mono ? "font-mono text-xs" : ""} text-neutral-200`}
+      >
         {value}
       </span>
     </div>
