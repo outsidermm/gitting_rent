@@ -14,9 +14,7 @@ export function LandlordView() {
     { enabled: !!address },
   );
 
-  const landlordLeases = leases?.filter(
-    (l) => l.landlordAddress === address,
-  );
+  const landlordLeases = leases?.filter((l) => l.landlordAddress === address);
 
   return (
     <div className="mx-auto max-w-2xl space-y-8">
@@ -71,6 +69,7 @@ interface CreateLeaseFormProps {
 
 function CreateLeaseForm({ landlordAddress, onCreated }: CreateLeaseFormProps) {
   const [form, setForm] = useState({
+    propertyAddress: "",
     tenantAddress: "",
     notaryAddress: "",
     bondAmountXrp: "",
@@ -94,6 +93,10 @@ function CreateLeaseForm({ landlordAddress, onCreated }: CreateLeaseFormProps) {
       .filter(Boolean);
 
     // Basic client-side validation
+    if (!form.propertyAddress.trim()) {
+      setError("Housing address is required.");
+      return;
+    }
     if (!form.tenantAddress.trim() || !form.notaryAddress.trim()) {
       setError("Tenant and Notary addresses are required.");
       return;
@@ -109,6 +112,7 @@ function CreateLeaseForm({ landlordAddress, onCreated }: CreateLeaseFormProps) {
 
     createLease.mutate({
       landlordAddress,
+      propertyAddress: form.propertyAddress.trim(),
       tenantAddress: form.tenantAddress.trim(),
       notaryAddress: form.notaryAddress.trim(),
       bondAmountXrp: form.bondAmountXrp.trim(),
@@ -124,6 +128,12 @@ function CreateLeaseForm({ landlordAddress, onCreated }: CreateLeaseFormProps) {
     >
       <h3 className="font-medium text-neutral-200">New Lease</h3>
 
+      <Field
+        label="Property Address"
+        placeholder="123 Main St, City, State"
+        value={form.propertyAddress}
+        onChange={(v) => setForm((f) => ({ ...f, propertyAddress: v }))}
+      />
       <Field
         label="Tenant XRPL Address"
         placeholder="rXXXXXXXXXXXXXXXXXXXXXXXXXXX"

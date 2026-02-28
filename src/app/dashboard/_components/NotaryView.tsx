@@ -20,9 +20,7 @@ export function NotaryView() {
     (l) => l.notaryAddress === address && l.status === "MOVE_OUT_PENDING",
   );
   const otherLeases = leases?.filter(
-    (l) =>
-      l.notaryAddress === address &&
-      l.status !== "MOVE_OUT_PENDING",
+    (l) => l.notaryAddress === address && l.status !== "MOVE_OUT_PENDING",
   );
 
   return (
@@ -37,7 +35,7 @@ export function NotaryView() {
       {/* Pending audits */}
       {pendingLeases?.length ? (
         <div className="space-y-6">
-          <h3 className="text-sm font-medium uppercase tracking-wide text-orange-400">
+          <h3 className="text-sm font-medium tracking-wide text-orange-400 uppercase">
             Pending Review ({pendingLeases.length})
           </h3>
           {pendingLeases.map((lease) => (
@@ -58,7 +56,7 @@ export function NotaryView() {
       {/* Completed / other notary leases */}
       {!!otherLeases?.length && (
         <div className="space-y-4">
-          <h3 className="text-sm font-medium uppercase tracking-wide text-neutral-500">
+          <h3 className="text-sm font-medium tracking-wide text-neutral-500 uppercase">
             Other Leases ({otherLeases.length})
           </h3>
           {otherLeases.map((lease) => (
@@ -91,7 +89,8 @@ function AuditPanel({
           <span className="font-mono text-xs text-neutral-500">
             #{lease.id.slice(-8).toUpperCase()}
           </span>
-          <p className="font-semibold">
+          <p className="font-semibold">{lease.propertyAddress}</p>
+          <p className="text-sm text-neutral-400">
             {xrpAmount} XRP bond — Tenant {lease.tenantAddress.slice(0, 10)}…
           </p>
         </div>
@@ -104,7 +103,7 @@ function AuditPanel({
       <div className="grid grid-cols-2 gap-0 divide-x divide-neutral-800">
         {/* Baseline */}
         <div className="space-y-3 p-5">
-          <h4 className="text-xs font-semibold uppercase tracking-wide text-neutral-400">
+          <h4 className="text-xs font-semibold tracking-wide text-neutral-400 uppercase">
             Baseline (Move-In)
           </h4>
           <p className="text-sm text-neutral-300">{lease.baselineCondition}</p>
@@ -115,7 +114,7 @@ function AuditPanel({
 
         {/* Move-out */}
         <div className="space-y-3 p-5">
-          <h4 className="text-xs font-semibold uppercase tracking-wide text-neutral-400">
+          <h4 className="text-xs font-semibold tracking-wide text-neutral-400 uppercase">
             Exit (Move-Out)
           </h4>
           {lease.evidence ? (
@@ -157,7 +156,8 @@ function OtherLeaseRow({ lease }: { lease: Lease }) {
         <p className="font-mono text-xs text-neutral-500">
           #{lease.id.slice(-8).toUpperCase()}
         </p>
-        <p className="text-sm">
+        <p className="text-sm">{lease.propertyAddress}</p>
+        <p className="text-sm text-neutral-400">
           {xrpAmount} XRP — Tenant {lease.tenantAddress.slice(0, 10)}…
         </p>
       </div>

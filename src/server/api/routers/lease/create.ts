@@ -15,9 +15,12 @@ export const create = publicProcedure
   .input(
     z.object({
       landlordAddress: z.string().min(25),
+      propertyAddress: z.string().min(1),
       tenantAddress: z.string().min(25),
       notaryAddress: z.string().min(25),
-      bondAmountXrp: z.string().regex(/^\d+(\.\d+)?$/, "Must be a positive number"),
+      bondAmountXrp: z
+        .string()
+        .regex(/^\d+(\.\d+)?$/, "Must be a positive number"),
       baselineCondition: z.string().min(1),
       baselinePhotoUrls: z.array(z.string().url()),
     }),
@@ -29,6 +32,7 @@ export const create = publicProcedure
     return ctx.db.lease.create({
       data: {
         landlordAddress: input.landlordAddress,
+        propertyAddress: input.propertyAddress,
         tenantAddress: input.tenantAddress,
         notaryAddress: input.notaryAddress,
         bondAmountDrops,
