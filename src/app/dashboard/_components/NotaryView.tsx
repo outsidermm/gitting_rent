@@ -12,7 +12,7 @@ export function NotaryView() {
   const { address } = useWallet();
 
   const { data: leases, refetch } = api.lease.getByAddress.useQuery(
-    { address: address! },
+    { address: address ?? "" },
     { enabled: !!address },
   );
 

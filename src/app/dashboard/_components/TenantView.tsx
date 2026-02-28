@@ -11,7 +11,7 @@ export function TenantView() {
   const { address } = useWallet();
 
   const { data: leases, refetch } = api.lease.getByAddress.useQuery(
-    { address: address! },
+    { address: address ?? "" },
     { enabled: !!address },
   );
 
@@ -71,7 +71,9 @@ function TenantActions({ lease, tenantAddress, onUpdate }: TenantActionsProps) {
     return (
       <>
         <button
-          onClick={() => setActiveFlow(activeFlow === "escrow" ? null : "escrow")}
+          onClick={() =>
+            setActiveFlow(activeFlow === "escrow" ? null : "escrow")
+          }
           className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-blue-500"
         >
           {activeFlow === "escrow" ? "Cancel" : "Deposit Bond →"}

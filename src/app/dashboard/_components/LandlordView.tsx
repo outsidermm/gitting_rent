@@ -10,7 +10,7 @@ export function LandlordView() {
   const [showForm, setShowForm] = useState(false);
 
   const { data: leases, refetch } = api.lease.getByAddress.useQuery(
-    { address: address! },
+    { address: address ?? "" },
     { enabled: !!address },
   );
 
