@@ -6,7 +6,10 @@ import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 
 import { publicProcedure } from "~/server/api/trpc";
-import { buildEscrowCreatePayload, buildEscrowFinishPayload } from "~/server/xrpl/payloads";
+import {
+  buildEscrowCreatePayload,
+  buildEscrowFinishPayload,
+} from "~/server/xrpl/payloads";
 import { verifyConditionPair } from "~/server/xrpl/condition";
 
 // ─── getEscrowCreatePayload ──────────────────────────────────────────────────
@@ -86,7 +89,8 @@ export const getEscrowFinishPayload = publicProcedure
     if (lease.notaryAddress !== input.callerAddress) {
       throw new TRPCError({
         code: "FORBIDDEN",
-        message: "Only the designated notary may retrieve the EscrowFinish payload.",
+        message:
+          "Only the designated notary may retrieve the EscrowFinish payload.",
       });
     }
 
@@ -97,9 +101,19 @@ export const getEscrowFinishPayload = publicProcedure
       });
     }
 
-    const { escrowSequence, escrowOwnerAddress, escrowCondition, escrowFulfillment } = lease;
+    const {
+      escrowSequence,
+      escrowOwnerAddress,
+      escrowCondition,
+      escrowFulfillment,
+    } = lease;
 
-    if (!escrowSequence || !escrowOwnerAddress || !escrowCondition || !escrowFulfillment) {
+    if (
+      !escrowSequence ||
+      !escrowOwnerAddress ||
+      !escrowCondition ||
+      !escrowFulfillment
+    ) {
       throw new TRPCError({
         code: "INTERNAL_SERVER_ERROR",
         message: "Escrow metadata is incomplete on this lease record.",
@@ -122,8 +136,9 @@ export const getEscrowFinishPayload = publicProcedure
 /** All leases where the given XRPL address is landlord, tenant, or notary. */
 export const getByAddress = publicProcedure
   .input(z.object({ address: z.string() }))
-  .query(({ ctx, input }) =>
-    ctx.db.lease.findMany({
+  .query(({ ctx, input }) => {
+    if (!input.address) return [];
+    return ctx.db.lease.findMany({
       where: {
         OR: [
           { landlordAddress: input.address },
@@ -133,8 +148,8 @@ export const getByAddress = publicProcedure
       },
       include: { evidence: true },
       orderBy: { createdAt: "desc" },
-    }),
-  );
+    });
+  });
 
 // ─── getById ─────────────────────────────────────────────────────────────────
 

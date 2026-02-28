@@ -29,7 +29,11 @@ export function EscrowFinishFlow({ leaseId, onSuccess }: Props) {
   const [error, setError] = useState("");
   const [txHash, setTxHash] = useState("");
 
-  const { data, isLoading, error: queryError } = api.lease.getEscrowFinishPayload.useQuery(
+  const {
+    data,
+    isLoading,
+    error: queryError,
+  } = api.lease.getEscrowFinishPayload.useQuery(
     { leaseId, callerAddress: address! },
     { enabled: !!address, retry: false },
   );
@@ -57,20 +61,33 @@ export function EscrowFinishFlow({ leaseId, onSuccess }: Props) {
       const fulfillmentBytes = Math.ceil(partialTx.Fulfillment!.length / 2);
       const elevatedFee = String(10 * Math.ceil((33 + fulfillmentBytes) / 16));
 
-      const prepared = await client.autofill({ ...partialTx, Fee: elevatedFee });
-      console.debug("[EscrowFinish] prepared tx:", JSON.stringify(prepared, null, 2));
+      const prepared = await client.autofill({
+        ...partialTx,
+        Fee: elevatedFee,
+      });
+      console.debug(
+        "[EscrowFinish] prepared tx:",
+        JSON.stringify(prepared, null, 2),
+      );
 
       const { tx_blob, hash } = wallet.sign(prepared);
       setStep("confirming");
 
       const result = await client.submitAndWait(tx_blob);
-      const meta = result.result.meta as { TransactionResult?: string } | undefined;
+      const meta = result.result.meta as
+        | { TransactionResult?: string }
+        | undefined;
       const txResult = meta?.TransactionResult;
 
-      console.debug("[EscrowFinish] result:", JSON.stringify(result.result, null, 2));
+      console.debug(
+        "[EscrowFinish] result:",
+        JSON.stringify(result.result, null, 2),
+      );
 
       if (txResult !== "tesSUCCESS") {
-        throw new Error(`EscrowFinish rejected: ${txResult ?? "no result code"}`);
+        throw new Error(
+          `EscrowFinish rejected: ${txResult ?? "no result code"}`,
+        );
       }
 
       setTxHash(hash);
@@ -108,21 +125,32 @@ export function EscrowFinishFlow({ leaseId, onSuccess }: Props) {
 
       {step === "done" ? (
         <div className="space-y-2">
-          <p className="text-sm text-green-400">✓ Bond released — EscrowFinish confirmed on-chain!</p>
+          <p className="text-sm text-green-400">
+            ✓ Bond released — EscrowFinish confirmed on-chain!
+          </p>
           {txHash && (
-            <p className="break-all font-mono text-xs text-neutral-500">tx: {txHash}</p>
+            <p className="font-mono text-xs break-all text-neutral-500">
+              tx: {txHash}
+            </p>
           )}
         </div>
       ) : (
         <>
           <div className="space-y-1 rounded-lg border border-green-900/40 bg-green-950/30 p-4 text-sm">
             <Row label="Bond amount" value={`${xrpAmount} XRP`} />
-            <Row label="Tenant" value={`${data.lease.tenantAddress.slice(0, 14)}…`} mono />
-            <Row label="Escrow sequence" value={String(data.lease.escrowSequence)} />
+            <Row
+              label="Tenant"
+              value={`${data.lease.tenantAddress.slice(0, 14)}…`}
+              mono
+            />
+            <Row
+              label="Escrow sequence"
+              value={String(data.lease.escrowSequence)}
+            />
           </div>
 
           {error && (
-            <p className="whitespace-pre-wrap rounded-lg bg-red-950/60 px-3 py-2 text-xs text-red-400">
+            <p className="rounded-lg bg-red-950/60 px-3 py-2 text-xs whitespace-pre-wrap text-red-400">
               {error}
             </p>
           )}
@@ -148,11 +176,21 @@ export function EscrowFinishFlow({ leaseId, onSuccess }: Props) {
   );
 }
 
-function Row({ label, value, mono }: { label: string; value: string; mono?: boolean }) {
+function Row({
+  label,
+  value,
+  mono,
+}: {
+  label: string;
+  value: string;
+  mono?: boolean;
+}) {
   return (
     <div className="flex justify-between gap-4">
       <span className="text-neutral-500">{label}</span>
-      <span className={`text-right ${mono ? "font-mono text-xs" : ""} text-neutral-200`}>
+      <span
+        className={`text-right ${mono ? "font-mono text-xs" : ""} text-neutral-200`}
+      >
         {value}
       </span>
     </div>

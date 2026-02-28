@@ -10,7 +10,7 @@ export function LandlordView() {
   const [showForm, setShowForm] = useState(false);
 
   const { data: leases, refetch } = api.lease.getByAddress.useQuery(
-    { address: address! },
+    { address: address ?? "" },
     { enabled: !!address },
   );
 
@@ -68,6 +68,7 @@ interface CreateLeaseFormProps {
 }
 
 function CreateLeaseForm({ landlordAddress, onCreated }: CreateLeaseFormProps) {
+  const { balance } = useWallet();
   const [form, setForm] = useState({
     propertyAddress: "",
     tenantAddress: "",
@@ -78,9 +79,30 @@ function CreateLeaseForm({ landlordAddress, onCreated }: CreateLeaseFormProps) {
   });
   const [error, setError] = useState("");
 
+  const isValidXrpAddress = (address: string): boolean => {
+    return /^r[1-9A-HJ-NP-Za-km-z]{24,34}$/.test(address);
+  };
+
   const createLease = api.lease.create.useMutation({
     onSuccess: onCreated,
-    onError: (e) => setError(e.message),
+    onError: (e) => {
+      const msg = e.message;
+      if (
+        msg.includes("tenantAddress") ||
+        msg.includes("landlordAddress") ||
+        msg.includes("notaryAddress")
+      ) {
+        setError("Invalid XRPL address format.");
+      } else if (msg.includes("bondAmountXrp")) {
+        setError("Invalid bond amount.");
+      } else if (msg.includes("baselineCondition")) {
+        setError("Baseline condition exceeds 2000 characters.");
+      } else if (msg.includes("baselinePhotoUrls")) {
+        setError("Invalid photo URL format.");
+      } else {
+        setError("An unexpected error occurred.");
+      }
+    },
   });
 
   function handleSubmit(e: React.FormEvent) {
@@ -94,19 +116,49 @@ function CreateLeaseForm({ landlordAddress, onCreated }: CreateLeaseFormProps) {
 
     // Basic client-side validation
     if (!form.propertyAddress.trim()) {
-      setError("Housing address is required.");
+      setError("Property address is required.");
+      return;
+    }
+    if (form.tenantAddress.trim() === form.notaryAddress.trim()) {
+      setError("Tenant and Notary addresses must be different.");
       return;
     }
     if (!form.tenantAddress.trim() || !form.notaryAddress.trim()) {
       setError("Tenant and Notary addresses are required.");
       return;
     }
+    if (!isValidXrpAddress(form.tenantAddress.trim())) {
+      setError("Tenant address is not a valid XRP address.");
+      return;
+    }
+    if (!isValidXrpAddress(form.notaryAddress.trim())) {
+      setError("Notary address is not a valid XRP address.");
+      return;
+    }
+    if (form.tenantAddress.trim() === landlordAddress) {
+      setError("Tenant address must be different from Landlord address.");
+      return;
+    }
+    if (form.notaryAddress.trim() === landlordAddress) {
+      setError("Notary address must be different from Landlord address.");
+      return;
+    }
     if (!form.bondAmountXrp || isNaN(Number(form.bondAmountXrp))) {
       setError("Enter a valid XRP bond amount.");
       return;
     }
-    if (!form.baselineCondition.trim()) {
-      setError("Baseline condition description is required.");
+    const bondAmount = Number(form.bondAmountXrp);
+    if (balance && bondAmount > 0) {
+      const currentBalance = Number(balance);
+      if (currentBalance - bondAmount < 10) {
+        setError(
+          `Bond amount would leave less than 10 XRP. Maximum allowed: ${(currentBalance - 10).toFixed(2)} XRP`,
+        );
+        return;
+      }
+    }
+    if (form.baselineCondition.trim().length > 2000) {
+      setError("Baseline condition must be 2000 characters or less.");
       return;
     }
 
