@@ -27,7 +27,12 @@ export const create = publicProcedure
   )
   .mutation(async ({ ctx, input }) => {
     const bondAmountDrops = xrpToDrops(input.bondAmountXrp);
-    const { condition, fulfillment } = generateConditionPair();
+
+    // Generate two independent condition pairs — one per escrow variant.
+    // The penalty pair guards the landlord-destination escrow (Poor condition).
+    // The refund pair guards the tenant-destination escrow (all other conditions).
+    const penaltyPair = generateConditionPair();
+    const refundPair = generateConditionPair();
 
     return ctx.db.lease.create({
       data: {
@@ -38,8 +43,12 @@ export const create = publicProcedure
         bondAmountDrops,
         baselineCondition: input.baselineCondition,
         baselinePhotoUrls: input.baselinePhotoUrls,
-        escrowCondition: condition,
-        escrowFulfillment: fulfillment,
+        // Penalty escrow (Destination = landlord)
+        escrowCondition: penaltyPair.condition,
+        escrowFulfillment: penaltyPair.fulfillment,
+        // Refund escrow (Destination = tenant)
+        refundEscrowCondition: refundPair.condition,
+        refundEscrowFulfillment: refundPair.fulfillment,
       },
     });
   });

@@ -6,6 +6,7 @@ import { api } from "~/trpc/react";
 import { LeaseCard } from "./LeaseCard";
 import { EscrowCreateFlow } from "./EscrowCreateFlow";
 import { MoveOutFlow } from "./MoveOutFlow";
+import { EscrowCancelFlow } from "./EscrowCancelFlow";
 
 export function TenantView() {
   const { address, refreshBalance } = useWallet();
@@ -24,7 +25,7 @@ export function TenantView() {
 
   if (!tenantLeases?.length) {
     return (
-      <div className="mx-auto max-w-2xl space-y-4">
+      <div className="space-y-4">
         <h2 className="text-lg font-semibold">Your Leases</h2>
         <p className="text-sm text-neutral-500">
           No leases found for your address. Ask your landlord to create one.
@@ -34,7 +35,7 @@ export function TenantView() {
   }
 
   return (
-    <div className="mx-auto max-w-2xl space-y-6">
+    <div className="space-y-6">
       <h2 className="text-lg font-semibold">Your Leases</h2>
       {tenantLeases.map((lease) => (
         <LeaseCard
@@ -62,6 +63,8 @@ interface TenantActionsProps {
     status: string;
     tenantAddress: string;
     escrowSequence: number | null;
+    refundEscrowSequence: number | null;
+    approvedVerdict?: string | null;
   };
   tenantAddress: string;
   onUpdate: () => void;
@@ -84,7 +87,7 @@ function TenantActions({ lease, tenantAddress, onUpdate }: TenantActionsProps) {
           {activeFlow === "escrow" ? "Cancel" : "Deposit Bond →"}
         </button>
         {activeFlow === "escrow" && (
-          <div className="mt-4">
+          <div className="mt-3 border-t border-neutral-800 pt-4">
             <EscrowCreateFlow
               leaseId={lease.id}
               onSuccess={() => {
@@ -110,7 +113,7 @@ function TenantActions({ lease, tenantAddress, onUpdate }: TenantActionsProps) {
           {activeFlow === "moveout" ? "Cancel" : "Submit Move-Out →"}
         </button>
         {activeFlow === "moveout" && (
-          <div className="mt-4">
+          <div className="mt-3 border-t border-neutral-800 pt-4">
             <MoveOutFlow
               leaseId={lease.id}
               callerAddress={tenantAddress}
@@ -134,10 +137,31 @@ function TenantActions({ lease, tenantAddress, onUpdate }: TenantActionsProps) {
   }
 
   if (lease.status === "APPROVED") {
+    const isPenalty = lease.approvedVerdict === "penalty";
+
+    // Determine which escrow was NOT finished so the tenant can cancel it
+    const sequenceToCancel = isPenalty
+      ? lease.refundEscrowSequence
+      : lease.escrowSequence;
+
     return (
-      <p className="text-sm text-green-400">
-        ✓ Bond released to your wallet by the Notary.
-      </p>
+      <div className="space-y-4">
+        {isPenalty ? (
+          <p className="text-sm text-red-400">
+            ⚠ Bond was claimed by the Landlord following Notary review.
+          </p>
+        ) : (
+          <p className="text-sm text-green-400">
+            ✓ Bond released to your wallet by the Notary.
+          </p>
+        )}
+
+        {sequenceToCancel && (
+          <div className="border-t border-neutral-800 pt-3">
+            <EscrowCancelFlow sequence={sequenceToCancel} />
+          </div>
+        )}
+      </div>
     );
   }
 

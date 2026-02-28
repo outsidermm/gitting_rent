@@ -6,7 +6,7 @@
  * router makes each piece testable in isolation.
  */
 
-import type { EscrowCreate, EscrowFinish } from "xrpl";
+import type { EscrowCreate, EscrowFinish, EscrowCancel } from "xrpl";
 import { xrpToDrops } from "xrpl";
 
 // ─── epoch helpers ───────────────────────────────────────────────────────────
@@ -30,27 +30,43 @@ export interface EscrowCreateParams {
 
 /**
  * Build the unsigned EscrowCreate payload the tenant's browser will sign.
- *
- * Design choices:
- *   • No FinishAfter — with only a Condition present, the authorised notary
- *     can call EscrowFinish at any time by providing the fulfillment.
- *     Adding FinishAfter would block the notary until that time passes.
- *   • CancelAfter = 90 days — gives the tenant a guaranteed refund path if
- *     the notary is permanently unavailable.
- *   • Sequence / Fee / LastLedgerSequence are intentionally omitted — the
- *     client-side `autofill` fills these from live network state, preventing
- *     stale-nonce failures when there is latency between server and browser.
  */
 export function buildEscrowCreatePayload(
   params: EscrowCreateParams,
 ): Partial<EscrowCreate> {
-  const cancelAfter = nowRippleEpoch() + 90 * 24 * 60 * 60; // 90 days
+  const cancelAfter = nowRippleEpoch() + 60; // 1 day
 
   return {
     TransactionType: "EscrowCreate",
     Account: params.tenantAddress,
     Amount: params.bondAmountDrops,
-    Destination: params.landlordAddress,
+    Destination: params.landlordAddress, // penalty escrow: notary settles if condition is Poor
+    Condition: params.condition,
+    CancelAfter: cancelAfter,
+  };
+}
+
+// ─── Refund EscrowCreate (Destination = tenant) ───────────────────────────────
+
+export interface RefundEscrowCreateParams {
+  tenantAddress: string;
+  bondAmountDrops: string;
+  condition: string; // hex-encoded DER condition for the refund path
+}
+
+/**
+ * Build the unsigned EscrowCreate for the refund path.
+ */
+export function buildRefundEscrowCreatePayload(
+  params: RefundEscrowCreateParams,
+): Partial<EscrowCreate> {
+  const cancelAfter = nowRippleEpoch() + 60; // 1 day
+
+  return {
+    TransactionType: "EscrowCreate",
+    Account: params.tenantAddress,
+    Amount: params.bondAmountDrops,
+    Destination: params.tenantAddress, // refund escrow: notary settles if condition is acceptable
     Condition: params.condition,
     CancelAfter: cancelAfter,
   };
@@ -66,15 +82,6 @@ export interface EscrowFinishParams {
   fulfillment: string;
 }
 
-/**
- * Build the EscrowFinish transaction that the server submits on behalf of the
- * notary using their wallet seed.
- *
- * Note: Fee is deliberately omitted. EscrowFinish with a crypto-condition
- * requires a higher minimum fee than a standard transaction
- * (10 * ceil((33 + len(Fulfillment_bytes)) / 16) drops).
- * Passing the tx through `autofill` lets the library calculate this correctly.
- */
 export function buildEscrowFinishPayload(
   params: EscrowFinishParams,
 ): EscrowFinish {
@@ -85,6 +92,24 @@ export function buildEscrowFinishPayload(
     OfferSequence: params.escrowSequence,
     Condition: params.condition,
     Fulfillment: params.fulfillment,
+  };
+}
+
+// ─── EscrowCancel ────────────────────────────────────────────────────────────
+
+export interface EscrowCancelParams {
+  tenantAddress: string;
+  escrowSequence: number;
+}
+
+export function buildEscrowCancelPayload(
+  params: EscrowCancelParams,
+): EscrowCancel {
+  return {
+    TransactionType: "EscrowCancel",
+    Account: params.tenantAddress,
+    Owner: params.tenantAddress, // Tenant created the escrows
+    OfferSequence: params.escrowSequence,
   };
 }
 

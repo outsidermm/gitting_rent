@@ -14,9 +14,11 @@ export const confirmEscrow = publicProcedure
   .input(
     z.object({
       leaseId: z.string(),
-      /** Sequence number of the confirmed EscrowCreate transaction. */
+      /** Sequence number of the confirmed penalty EscrowCreate (Destination = landlord). */
       escrowSequence: z.number().int().positive(),
-      /** XRPL address of the account that issued the EscrowCreate (the tenant). */
+      /** Sequence number of the confirmed refund EscrowCreate (Destination = tenant). */
+      refundEscrowSequence: z.number().int().positive(),
+      /** XRPL address of the account that issued both EscrowCreate txs (the tenant). */
       escrowOwnerAddress: z.string().min(25),
     }),
   )
@@ -40,6 +42,7 @@ export const confirmEscrow = publicProcedure
       where: { id: input.leaseId },
       data: {
         escrowSequence: input.escrowSequence,
+        refundEscrowSequence: input.refundEscrowSequence,
         escrowOwnerAddress: input.escrowOwnerAddress,
         status: "ESCROWED",
       },

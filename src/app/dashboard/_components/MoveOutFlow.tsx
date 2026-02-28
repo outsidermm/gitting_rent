@@ -5,11 +5,43 @@ import { api } from "~/trpc/react";
 import { PhotoUploader } from "~/app/ui/photo-uploader";
 
 const CONDITION_OPTIONS = [
-  "Excellent — no damage, professionally cleaned",
-  "Good — minor wear, light cleaning needed",
-  "Fair — some damage, repairs required",
-  "Poor — significant damage, major repairs needed",
-];
+  {
+    value: "Excellent — no damage, professionally cleaned",
+    label: "Excellent",
+    description: "No damage, professionally cleaned",
+    ring: "ring-green-600",
+    bg: "bg-green-900/20 border-green-800/60",
+    dot: "bg-green-500",
+    label_color: "text-green-400",
+  },
+  {
+    value: "Good — minor wear, light cleaning needed",
+    label: "Good",
+    description: "Minor wear, light cleaning needed",
+    ring: "ring-blue-600",
+    bg: "bg-blue-900/20 border-blue-800/60",
+    dot: "bg-blue-500",
+    label_color: "text-blue-400",
+  },
+  {
+    value: "Fair — some damage, repairs required",
+    label: "Fair",
+    description: "Some damage, repairs required",
+    ring: "ring-yellow-600",
+    bg: "bg-yellow-900/20 border-yellow-800/60",
+    dot: "bg-yellow-500",
+    label_color: "text-yellow-400",
+  },
+  {
+    value: "Poor — significant damage, major repairs needed",
+    label: "Poor",
+    description: "Significant damage, major repairs needed",
+    ring: "ring-red-600",
+    bg: "bg-red-900/20 border-red-800/60",
+    dot: "bg-red-500",
+    label_color: "text-red-400",
+  },
+] as const;
 
 interface MoveOutFlowProps {
   leaseId: string;
@@ -22,7 +54,7 @@ export function MoveOutFlow({
   callerAddress,
   onSuccess,
 }: MoveOutFlowProps) {
-  const [exitCondition, setExitCondition] = useState(CONDITION_OPTIONS[0]!);
+  const [exitCondition, setExitCondition] = useState<string>(CONDITION_OPTIONS[0].value);
   const [customNote, setCustomNote] = useState("");
   const [photoUrls, setPhotoUrls] = useState<string[]>([]);
   const [error, setError] = useState("");
@@ -51,27 +83,43 @@ export function MoveOutFlow({
   return (
     <form
       onSubmit={handleSubmit}
-      className="space-y-4 rounded-xl border border-orange-900/50 bg-orange-950/20 p-5"
+      className="space-y-5"
     >
-      <h4 className="font-medium text-orange-300">Move-Out Report</h4>
+      <h4 className="font-semibold text-orange-300">Move-Out Report</h4>
 
-      <div className="space-y-1.5">
+      {/* Condition selector */}
+      <div className="space-y-2">
         <label className="block text-sm font-medium text-neutral-300">
           Exit Condition
         </label>
-        <select
-          value={exitCondition}
-          onChange={(e) => setExitCondition(e.target.value)}
-          className="w-full rounded-lg border border-neutral-700 bg-neutral-800 px-3 py-2 text-sm text-neutral-100 outline-none focus:border-neutral-500"
-        >
-          {CONDITION_OPTIONS.map((opt) => (
-            <option key={opt} value={opt}>
-              {opt}
-            </option>
-          ))}
-        </select>
+        <div className="grid grid-cols-2 gap-2">
+          {CONDITION_OPTIONS.map((opt) => {
+            const selected = exitCondition === opt.value;
+            return (
+              <button
+                key={opt.value}
+                type="button"
+                onClick={() => setExitCondition(opt.value)}
+                className={`flex items-start gap-2.5 rounded-lg border p-3 text-left transition ${opt.bg} ${
+                  selected ? `ring-2 ${opt.ring}` : "hover:brightness-110"
+                }`}
+              >
+                <span
+                  className={`mt-0.5 h-2.5 w-2.5 shrink-0 rounded-full ${opt.dot} ${selected ? "opacity-100" : "opacity-50"}`}
+                />
+                <div>
+                  <p className={`text-sm font-semibold ${opt.label_color}`}>
+                    {opt.label}
+                  </p>
+                  <p className="text-xs text-neutral-400">{opt.description}</p>
+                </div>
+              </button>
+            );
+          })}
+        </div>
       </div>
 
+      {/* Additional notes */}
       <div className="space-y-1.5">
         <label className="block text-sm font-medium text-neutral-300">
           Additional Notes{" "}
@@ -86,6 +134,7 @@ export function MoveOutFlow({
         />
       </div>
 
+      {/* Exit photos */}
       <div className="space-y-1.5">
         <label className="block text-sm font-medium text-neutral-300">
           Exit Photos{" "}

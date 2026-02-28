@@ -8,6 +8,7 @@ import { z } from "zod";
 import { publicProcedure } from "~/server/api/trpc";
 import {
   buildEscrowCreatePayload,
+  buildRefundEscrowCreatePayload,
   buildEscrowFinishPayload,
 } from "~/server/xrpl/payloads";
 import { verifyConditionPair } from "~/server/xrpl/condition";
@@ -37,33 +38,50 @@ export const getEscrowCreatePayload = publicProcedure
       });
     }
 
-    if (!lease.escrowCondition || !lease.escrowFulfillment) {
+    if (
+      !lease.escrowCondition ||
+      !lease.escrowFulfillment ||
+      !lease.refundEscrowCondition ||
+      !lease.refundEscrowFulfillment
+    ) {
       throw new TRPCError({
         code: "INTERNAL_SERVER_ERROR",
         message: "This lease cannot be processed. Please contact support.",
       });
     }
 
-    const pairValid = verifyConditionPair({
+    const penaltyValid = verifyConditionPair({
       condition: lease.escrowCondition,
       fulfillment: lease.escrowFulfillment,
     });
+    const refundValid = verifyConditionPair({
+      condition: lease.refundEscrowCondition,
+      fulfillment: lease.refundEscrowFulfillment,
+    });
 
-    if (!pairValid) {
+    if (!penaltyValid || !refundValid) {
       throw new TRPCError({
         code: "INTERNAL_SERVER_ERROR",
         message: "This lease has encountered an issue. Please create a new lease.",
       });
     }
 
-    const tx = buildEscrowCreatePayload({
+    // Penalty escrow: Destination = landlord (settled if condition is Poor)
+    const txPenalty = buildEscrowCreatePayload({
       tenantAddress: lease.tenantAddress,
       landlordAddress: lease.landlordAddress,
       bondAmountDrops: lease.bondAmountDrops,
       condition: lease.escrowCondition,
     });
 
-    return { tx, lease };
+    // Refund escrow: Destination = tenant (settled if condition is Excellent/Good/Fair)
+    const txRefund = buildRefundEscrowCreatePayload({
+      tenantAddress: lease.tenantAddress,
+      bondAmountDrops: lease.bondAmountDrops,
+      condition: lease.refundEscrowCondition,
+    });
+
+    return { txPenalty, txRefund, lease };
   });
 
 // ─── getEscrowFinishPayload ───────────────────────────────────────────────────
@@ -74,7 +92,14 @@ export const getEscrowCreatePayload = publicProcedure
  * designated notary (verified by callerAddress) may retrieve it.
  */
 export const getEscrowFinishPayload = publicProcedure
-  .input(z.object({ leaseId: z.string(), callerAddress: z.string().min(25) }))
+  .input(
+    z.object({
+      leaseId: z.string(),
+      callerAddress: z.string().min(25),
+      /** Which escrow to settle: "refund" returns bond to tenant, "penalty" sends bond to landlord. */
+      verdict: z.enum(["refund", "penalty"]),
+    }),
+  )
   .query(async ({ ctx, input }) => {
     const lease = await ctx.db.lease.findUnique({
       where: { id: input.leaseId },
@@ -97,19 +122,17 @@ export const getEscrowFinishPayload = publicProcedure
       });
     }
 
-    const {
-      escrowSequence,
-      escrowOwnerAddress,
-      escrowCondition,
-      escrowFulfillment,
-    } = lease;
+    const { escrowOwnerAddress } = lease;
 
-    if (
-      !escrowSequence ||
-      !escrowOwnerAddress ||
-      !escrowCondition ||
-      !escrowFulfillment
-    ) {
+    // Select escrow fields based on the notary's verdict
+    const escrowSequence =
+      input.verdict === "penalty" ? lease.escrowSequence : lease.refundEscrowSequence;
+    const escrowCondition =
+      input.verdict === "penalty" ? lease.escrowCondition : lease.refundEscrowCondition;
+    const escrowFulfillment =
+      input.verdict === "penalty" ? lease.escrowFulfillment : lease.refundEscrowFulfillment;
+
+    if (!escrowSequence || !escrowOwnerAddress || !escrowCondition || !escrowFulfillment) {
       throw new TRPCError({
         code: "INTERNAL_SERVER_ERROR",
         message: "This lease cannot be processed. Please contact support.",
@@ -124,7 +147,7 @@ export const getEscrowFinishPayload = publicProcedure
       fulfillment: escrowFulfillment,
     });
 
-    return { tx, lease };
+    return { tx, lease, verdict: input.verdict };
   });
 
 // ─── getByAddress ─────────────────────────────────────────────────────────────

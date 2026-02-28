@@ -18,7 +18,7 @@ export function LandlordView() {
   const landlordLeases = leases?.filter((l) => l.landlordAddress === address);
 
   return (
-    <div className="mx-auto max-w-2xl space-y-8">
+    <div className="space-y-8">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
