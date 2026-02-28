@@ -33,21 +33,21 @@ export const submitEvidence = publicProcedure
     if (lease.tenantAddress !== input.callerAddress) {
       throw new TRPCError({
         code: "FORBIDDEN",
-        message: "Only the tenant may submit move-out evidence.",
+        message: "You are not authorised to perform this action.",
       });
     }
 
     if (lease.status !== "ESCROWED") {
       throw new TRPCError({
         code: "BAD_REQUEST",
-        message: `Evidence can only be submitted when status is ESCROWED (current: "${lease.status}").`,
+        message: "Move-out evidence cannot be submitted at this stage.",
       });
     }
 
     if (lease.evidence) {
       throw new TRPCError({
         code: "BAD_REQUEST",
-        message: "Move-out evidence has already been submitted for this lease.",
+        message: "Move-out evidence has already been submitted.",
       });
     }
 

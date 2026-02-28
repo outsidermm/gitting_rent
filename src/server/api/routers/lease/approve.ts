@@ -33,14 +33,14 @@ export const approveRefund = publicProcedure
     if (lease.notaryAddress !== input.callerAddress) {
       throw new TRPCError({
         code: "FORBIDDEN",
-        message: "Only the designated notary may approve this refund.",
+        message: "You are not authorised to perform this action.",
       });
     }
 
     if (lease.status !== "MOVE_OUT_PENDING") {
       throw new TRPCError({
         code: "BAD_REQUEST",
-        message: `Cannot approve — lease status is "${lease.status}", expected "MOVE_OUT_PENDING".`,
+        message: "This lease is not ready for approval.",
       });
     }
 

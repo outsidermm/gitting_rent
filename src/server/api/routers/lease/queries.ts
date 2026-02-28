@@ -33,19 +33,17 @@ export const getEscrowCreatePayload = publicProcedure
     if (lease.status !== "PENDING_ESCROW") {
       throw new TRPCError({
         code: "BAD_REQUEST",
-        message: `Lease is not awaiting escrow (current status: ${lease.status}).`,
+        message: "This lease is not currently awaiting a deposit.",
       });
     }
 
     if (!lease.escrowCondition || !lease.escrowFulfillment) {
       throw new TRPCError({
         code: "INTERNAL_SERVER_ERROR",
-        message: "Lease is missing crypto-condition data.",
+        message: "This lease cannot be processed. Please contact support.",
       });
     }
 
-    // Verify the stored condition/fulfillment pair before handing it to the
-    // client — a mismatch would cause temMALFORMED or tecCRYPTOCONDITION_ERROR.
     const pairValid = verifyConditionPair({
       condition: lease.escrowCondition,
       fulfillment: lease.escrowFulfillment,
@@ -54,8 +52,7 @@ export const getEscrowCreatePayload = publicProcedure
     if (!pairValid) {
       throw new TRPCError({
         code: "INTERNAL_SERVER_ERROR",
-        message:
-          "Stored crypto-condition is corrupt. Recreate the lease to generate a fresh pair.",
+        message: "This lease has encountered an issue. Please create a new lease.",
       });
     }
 
@@ -89,15 +86,14 @@ export const getEscrowFinishPayload = publicProcedure
     if (lease.notaryAddress !== input.callerAddress) {
       throw new TRPCError({
         code: "FORBIDDEN",
-        message:
-          "Only the designated notary may retrieve the EscrowFinish payload.",
+        message: "You are not authorised to perform this action.",
       });
     }
 
     if (lease.status !== "MOVE_OUT_PENDING") {
       throw new TRPCError({
         code: "BAD_REQUEST",
-        message: `Lease is not awaiting notary approval (status: ${lease.status}).`,
+        message: "This lease is not currently awaiting approval.",
       });
     }
 
@@ -116,7 +112,7 @@ export const getEscrowFinishPayload = publicProcedure
     ) {
       throw new TRPCError({
         code: "INTERNAL_SERVER_ERROR",
-        message: "Escrow metadata is incomplete on this lease record.",
+        message: "This lease cannot be processed. Please contact support.",
       });
     }
 

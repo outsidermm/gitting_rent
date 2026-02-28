@@ -28,7 +28,7 @@ export function MoveOutFlow({
 
   const submitEvidence = api.lease.submitEvidence.useMutation({
     onSuccess,
-    onError: (e) => setError(e.message),
+    onError: () => setError("Unable to submit your move-out report. Please try again."),
   });
 
   function handleSubmit(e: React.FormEvent) {

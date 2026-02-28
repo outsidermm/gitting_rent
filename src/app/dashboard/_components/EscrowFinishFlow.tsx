@@ -38,7 +38,7 @@ export function EscrowFinishFlow({ leaseId, onSuccess }: EscrowFinishFlowProps) 
 
   const approveRefund = api.lease.approveRefund.useMutation({
     onSuccess,
-    onError: (e) => setError(`DB update failed: ${e.message}`),
+    onError: () => setError("The bond was released on-chain but we could not update the lease. Please refresh and check the lease status."),
   });
 
   async function signAndSubmit() {
@@ -59,14 +59,7 @@ export function EscrowFinishFlow({ leaseId, onSuccess }: EscrowFinishFlowProps) 
       const fulfillmentBytes = Math.ceil(partialTx.Fulfillment!.length / 2);
       const elevatedFee = String(10 * Math.ceil((33 + fulfillmentBytes) / 16));
 
-      const prepared = await client.autofill({
-        ...partialTx,
-        Fee: elevatedFee,
-      });
-      console.debug(
-        "[EscrowFinish] prepared tx:",
-        JSON.stringify(prepared, null, 2),
-      );
+      const prepared = await client.autofill({ ...partialTx, Fee: elevatedFee });
 
       const { tx_blob, hash } = wallet.sign(prepared);
       setStep("confirming");
@@ -77,15 +70,8 @@ export function EscrowFinishFlow({ leaseId, onSuccess }: EscrowFinishFlowProps) 
         | undefined;
       const txResult = meta?.TransactionResult;
 
-      console.debug(
-        "[EscrowFinish] result:",
-        JSON.stringify(result.result, null, 2),
-      );
-
       if (txResult !== "tesSUCCESS") {
-        throw new Error(
-          `EscrowFinish rejected: ${txResult ?? "no result code"}`,
-        );
+        throw new Error("The bond release could not be completed. Please try again.");
       }
 
       setTxHash(hash);
@@ -95,7 +81,7 @@ export function EscrowFinishFlow({ leaseId, onSuccess }: EscrowFinishFlowProps) 
       approveRefund.mutate({ leaseId, callerAddress: address! });
       setStep("done");
     } catch (e: unknown) {
-      const msg = e instanceof Error ? e.message : "Unknown error";
+      const msg = e instanceof Error ? e.message : "Something went wrong. Please try again.";
       setError(msg);
       setStep("review");
     } finally {
@@ -110,7 +96,7 @@ export function EscrowFinishFlow({ leaseId, onSuccess }: EscrowFinishFlowProps) 
   if (queryError ?? !data) {
     return (
       <p className="text-sm text-red-400">
-        {queryError?.message ?? "Failed to load escrow payload."}
+        Unable to load release details. Please refresh and try again.
       </p>
     );
   }
@@ -136,15 +122,8 @@ export function EscrowFinishFlow({ leaseId, onSuccess }: EscrowFinishFlowProps) 
         <>
           <div className="space-y-1 rounded-lg border border-green-900/40 bg-green-950/30 p-4 text-sm">
             <Row label="Bond amount" value={`${xrpAmount} XRP`} />
-            <Row
-              label="Tenant"
-              value={`${data.lease.tenantAddress.slice(0, 14)}…`}
-              mono
-            />
-            <Row
-              label="Escrow sequence"
-              value={String(data.lease.escrowSequence)}
-            />
+            <Row label="Tenant" value={`${data.lease.tenantAddress.slice(0, 14)}…`} mono />
+            <Row label="Reference" value={`#${String(data.lease.escrowSequence)}`} />
           </div>
 
           {error && (
@@ -165,7 +144,7 @@ export function EscrowFinishFlow({ leaseId, onSuccess }: EscrowFinishFlowProps) 
             >
               {step === "review" && "Sign & Release Bond"}
               {step === "signing" && "Signing…"}
-              {step === "confirming" && "Confirming on XRPL Devnet…"}
+              {step === "confirming" && "Confirming on network…"}
             </button>
           )}
         </>
