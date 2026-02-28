@@ -6,7 +6,7 @@
  * (see EscrowFinishFlow.tsx), so the notary's seed never leaves their
  * device and no server-side XRPL connection is required.
  *
- * This mutation just validates the caller and flips the lease status.
+ *  This mutation just validates the caller and flips the lease status.
  */
 
 import { TRPCError } from "@trpc/server";

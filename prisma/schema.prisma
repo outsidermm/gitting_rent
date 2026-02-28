@@ -20,6 +20,9 @@ enum LeaseStatus {
 model Lease {
     id String @id @default(cuid())
 
+    // Property details
+    propertyAddress String
+
     // XRPL wallet addresses — any party can use any address
     landlordAddress String
     tenantAddress   String

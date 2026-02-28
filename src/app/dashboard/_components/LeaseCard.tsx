@@ -37,8 +37,9 @@ export function LeaseCard({ lease, perspective, actions }: LeaseCardProps) {
           <p className="font-mono text-xs text-neutral-500">
             Lease #{lease.id.slice(-8).toUpperCase()}
           </p>
-          <p className="mt-0.5 text-base font-semibold">
-            {xrpAmount} XRP bond
+          <p className="mt-0.5 text-base font-semibold">{xrpAmount} XRP bond</p>
+          <p className="mt-1 text-sm text-neutral-300">
+            {lease.propertyAddress}
           </p>
         </div>
         <span
@@ -69,7 +70,7 @@ export function LeaseCard({ lease, perspective, actions }: LeaseCardProps) {
 
       {/* Baseline condition */}
       <div className="space-y-1">
-        <p className="text-xs font-medium uppercase tracking-wide text-neutral-500">
+        <p className="text-xs font-medium tracking-wide text-neutral-500 uppercase">
           Baseline Condition
         </p>
         <p className="text-sm text-neutral-300">{lease.baselineCondition}</p>
@@ -83,7 +84,7 @@ export function LeaseCard({ lease, perspective, actions }: LeaseCardProps) {
       {/* Move-out evidence */}
       {lease.evidence && (
         <div className="space-y-2 border-t border-neutral-800 pt-4">
-          <p className="text-xs font-medium uppercase tracking-wide text-neutral-500">
+          <p className="text-xs font-medium tracking-wide text-neutral-500 uppercase">
             Move-Out Evidence
           </p>
           <p className="text-sm text-neutral-300">
@@ -99,7 +100,9 @@ export function LeaseCard({ lease, perspective, actions }: LeaseCardProps) {
       )}
 
       {/* Injected action buttons */}
-      {actions && <div className="border-t border-neutral-800 pt-4">{actions}</div>}
+      {actions && (
+        <div className="border-t border-neutral-800 pt-4">{actions}</div>
+      )}
     </div>
   );
 }
