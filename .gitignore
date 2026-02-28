@@ -7,10 +7,13 @@
 
 # testing
 /coverage
+/playwright-report
+/playwright/.auth
 
 # database
 /prisma/db.sqlite
 /prisma/db.sqlite-journal
+/generated
 db.sqlite
 
 # next.js
@@ -35,6 +38,7 @@ yarn-error.log*
 # do not commit any .env files to git, except for the .env.example file. https://create.t3.gg/en/usage/env-variables#using-environment-variables
 .env
 .env*.local
+.env.production
 
 # vercel
 .vercel
@@ -44,3 +48,4 @@ yarn-error.log*
 
 # idea files
 .idea
+test-results
