@@ -159,7 +159,7 @@ function TenantActions({ lease, tenantAddress, onUpdate }: TenantActionsProps) {
 
         {sequenceToCancel && (
           <div className="border-t border-neutral-800 pt-3">
-            <CancelEscrowFlow sequence={sequenceToCancel} />
+            <EscrowCancelFlow sequence={sequenceToCancel} />
           </div>
         )}
       </div>
@@ -171,7 +171,7 @@ function TenantActions({ lease, tenantAddress, onUpdate }: TenantActionsProps) {
 
 // ── Refund Claim Logic ───────────────────────────────────────────────────────
 
-function CancelEscrowFlow({ sequence }: { sequence: number }) {
+function EscrowCancelFlow({ sequence }: { sequence: number }) {
   const { seed, address, refreshBalance } = useWallet();
   const [status, setStatus] = useState<"idle" | "processing" | "done">("idle");
   const [error, setError] = useState("");
