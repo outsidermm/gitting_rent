@@ -6,7 +6,10 @@ import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 
 import { publicProcedure } from "~/server/api/trpc";
-import { buildEscrowCreatePayload, buildEscrowFinishPayload } from "~/server/xrpl/payloads";
+import {
+  buildEscrowCreatePayload,
+  buildEscrowFinishPayload,
+} from "~/server/xrpl/payloads";
 import { verifyConditionPair } from "~/server/xrpl/condition";
 
 // ─── getEscrowCreatePayload ──────────────────────────────────────────────────
@@ -30,19 +33,17 @@ export const getEscrowCreatePayload = publicProcedure
     if (lease.status !== "PENDING_ESCROW") {
       throw new TRPCError({
         code: "BAD_REQUEST",
-        message: `Lease is not awaiting escrow (current status: ${lease.status}).`,
+        message: "This lease is not currently awaiting a deposit.",
       });
     }
 
     if (!lease.escrowCondition || !lease.escrowFulfillment) {
       throw new TRPCError({
         code: "INTERNAL_SERVER_ERROR",
-        message: "Lease is missing crypto-condition data.",
+        message: "This lease cannot be processed. Please contact support.",
       });
     }
 
-    // Verify the stored condition/fulfillment pair before handing it to the
-    // client — a mismatch would cause temMALFORMED or tecCRYPTOCONDITION_ERROR.
     const pairValid = verifyConditionPair({
       condition: lease.escrowCondition,
       fulfillment: lease.escrowFulfillment,
@@ -51,8 +52,7 @@ export const getEscrowCreatePayload = publicProcedure
     if (!pairValid) {
       throw new TRPCError({
         code: "INTERNAL_SERVER_ERROR",
-        message:
-          "Stored crypto-condition is corrupt. Recreate the lease to generate a fresh pair.",
+        message: "This lease has encountered an issue. Please create a new lease.",
       });
     }
 
@@ -86,23 +86,33 @@ export const getEscrowFinishPayload = publicProcedure
     if (lease.notaryAddress !== input.callerAddress) {
       throw new TRPCError({
         code: "FORBIDDEN",
-        message: "Only the designated notary may retrieve the EscrowFinish payload.",
+        message: "You are not authorised to perform this action.",
       });
     }
 
     if (lease.status !== "MOVE_OUT_PENDING") {
       throw new TRPCError({
         code: "BAD_REQUEST",
-        message: `Lease is not awaiting notary approval (status: ${lease.status}).`,
+        message: "This lease is not currently awaiting approval.",
       });
     }
 
-    const { escrowSequence, escrowOwnerAddress, escrowCondition, escrowFulfillment } = lease;
+    const {
+      escrowSequence,
+      escrowOwnerAddress,
+      escrowCondition,
+      escrowFulfillment,
+    } = lease;
 
-    if (!escrowSequence || !escrowOwnerAddress || !escrowCondition || !escrowFulfillment) {
+    if (
+      !escrowSequence ||
+      !escrowOwnerAddress ||
+      !escrowCondition ||
+      !escrowFulfillment
+    ) {
       throw new TRPCError({
         code: "INTERNAL_SERVER_ERROR",
-        message: "Escrow metadata is incomplete on this lease record.",
+        message: "This lease cannot be processed. Please contact support.",
       });
     }
 
@@ -122,8 +132,9 @@ export const getEscrowFinishPayload = publicProcedure
 /** All leases where the given XRPL address is landlord, tenant, or notary. */
 export const getByAddress = publicProcedure
   .input(z.object({ address: z.string() }))
-  .query(({ ctx, input }) =>
-    ctx.db.lease.findMany({
+  .query(({ ctx, input }) => {
+    if (!input.address) return [];
+    return ctx.db.lease.findMany({
       where: {
         OR: [
           { landlordAddress: input.address },
@@ -133,8 +144,8 @@ export const getByAddress = publicProcedure
       },
       include: { evidence: true },
       orderBy: { createdAt: "desc" },
-    }),
-  );
+    });
+  });
 
 // ─── getById ─────────────────────────────────────────────────────────────────
 

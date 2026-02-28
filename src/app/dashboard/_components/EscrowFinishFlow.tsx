@@ -13,30 +13,32 @@ import { useState } from "react";
 import { Wallet, Client, dropsToXrp } from "xrpl";
 import { useWallet } from "~/context/WalletContext";
 import { api } from "~/trpc/react";
+import { DEVNET_WSS } from "~/app/constants";
+import type { Step } from "~/types/step";
 
-const DEVNET_WSS = "wss://s.devnet.rippletest.net:51233";
-
-interface Props {
+interface EscrowFinishFlowProps {
   leaseId: string;
   onSuccess: () => void;
 }
 
-type Step = "review" | "signing" | "confirming" | "done";
-
-export function EscrowFinishFlow({ leaseId, onSuccess }: Props) {
+export function EscrowFinishFlow({ leaseId, onSuccess }: EscrowFinishFlowProps) {
   const { seed, address } = useWallet();
   const [step, setStep] = useState<Step>("review");
   const [error, setError] = useState("");
   const [txHash, setTxHash] = useState("");
 
-  const { data, isLoading, error: queryError } = api.lease.getEscrowFinishPayload.useQuery(
+  const {
+    data,
+    isLoading,
+    error: queryError,
+  } = api.lease.getEscrowFinishPayload.useQuery(
     { leaseId, callerAddress: address! },
     { enabled: !!address, retry: false },
   );
 
   const approveRefund = api.lease.approveRefund.useMutation({
     onSuccess,
-    onError: (e) => setError(`DB update failed: ${e.message}`),
+    onError: () => setError("The bond was released on-chain but we could not update the lease. Please refresh and check the lease status."),
   });
 
   async function signAndSubmit() {
@@ -58,19 +60,18 @@ export function EscrowFinishFlow({ leaseId, onSuccess }: Props) {
       const elevatedFee = String(10 * Math.ceil((33 + fulfillmentBytes) / 16));
 
       const prepared = await client.autofill({ ...partialTx, Fee: elevatedFee });
-      console.debug("[EscrowFinish] prepared tx:", JSON.stringify(prepared, null, 2));
 
       const { tx_blob, hash } = wallet.sign(prepared);
       setStep("confirming");
 
       const result = await client.submitAndWait(tx_blob);
-      const meta = result.result.meta as { TransactionResult?: string } | undefined;
+      const meta = result.result.meta as
+        | { TransactionResult?: string }
+        | undefined;
       const txResult = meta?.TransactionResult;
 
-      console.debug("[EscrowFinish] result:", JSON.stringify(result.result, null, 2));
-
       if (txResult !== "tesSUCCESS") {
-        throw new Error(`EscrowFinish rejected: ${txResult ?? "no result code"}`);
+        throw new Error("The bond release could not be completed. Please try again.");
       }
 
       setTxHash(hash);
@@ -80,7 +81,7 @@ export function EscrowFinishFlow({ leaseId, onSuccess }: Props) {
       approveRefund.mutate({ leaseId, callerAddress: address! });
       setStep("done");
     } catch (e: unknown) {
-      const msg = e instanceof Error ? e.message : "Unknown error";
+      const msg = e instanceof Error ? e.message : "Something went wrong. Please try again.";
       setError(msg);
       setStep("review");
     } finally {
@@ -95,7 +96,7 @@ export function EscrowFinishFlow({ leaseId, onSuccess }: Props) {
   if (queryError ?? !data) {
     return (
       <p className="text-sm text-red-400">
-        {queryError?.message ?? "Failed to load escrow payload."}
+        Unable to load release details. Please refresh and try again.
       </p>
     );
   }
@@ -108,9 +109,13 @@ export function EscrowFinishFlow({ leaseId, onSuccess }: Props) {
 
       {step === "done" ? (
         <div className="space-y-2">
-          <p className="text-sm text-green-400">✓ Bond released — EscrowFinish confirmed on-chain!</p>
+          <p className="text-sm text-green-400">
+            ✓ Bond released — EscrowFinish confirmed on-chain!
+          </p>
           {txHash && (
-            <p className="break-all font-mono text-xs text-neutral-500">tx: {txHash}</p>
+            <p className="font-mono text-xs break-all text-neutral-500">
+              tx: {txHash}
+            </p>
           )}
         </div>
       ) : (
@@ -118,11 +123,11 @@ export function EscrowFinishFlow({ leaseId, onSuccess }: Props) {
           <div className="space-y-1 rounded-lg border border-green-900/40 bg-green-950/30 p-4 text-sm">
             <Row label="Bond amount" value={`${xrpAmount} XRP`} />
             <Row label="Tenant" value={`${data.lease.tenantAddress.slice(0, 14)}…`} mono />
-            <Row label="Escrow sequence" value={String(data.lease.escrowSequence)} />
+            <Row label="Reference" value={`#${String(data.lease.escrowSequence)}`} />
           </div>
 
           {error && (
-            <p className="whitespace-pre-wrap rounded-lg bg-red-950/60 px-3 py-2 text-xs text-red-400">
+            <p className="rounded-lg bg-red-950/60 px-3 py-2 text-xs whitespace-pre-wrap text-red-400">
               {error}
             </p>
           )}
@@ -139,7 +144,7 @@ export function EscrowFinishFlow({ leaseId, onSuccess }: Props) {
             >
               {step === "review" && "Sign & Release Bond"}
               {step === "signing" && "Signing…"}
-              {step === "confirming" && "Confirming on XRPL Devnet…"}
+              {step === "confirming" && "Confirming on network…"}
             </button>
           )}
         </>
@@ -148,11 +153,21 @@ export function EscrowFinishFlow({ leaseId, onSuccess }: Props) {
   );
 }
 
-function Row({ label, value, mono }: { label: string; value: string; mono?: boolean }) {
+function Row({
+  label,
+  value,
+  mono,
+}: {
+  label: string;
+  value: string;
+  mono?: boolean;
+}) {
   return (
     <div className="flex justify-between gap-4">
       <span className="text-neutral-500">{label}</span>
-      <span className={`text-right ${mono ? "font-mono text-xs" : ""} text-neutral-200`}>
+      <span
+        className={`text-right ${mono ? "font-mono text-xs" : ""} text-neutral-200`}
+      >
         {value}
       </span>
     </div>

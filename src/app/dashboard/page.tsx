@@ -2,7 +2,8 @@
 
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { useWallet, type Role } from "~/context/WalletContext";
+import { useWallet } from "~/context/WalletContext";
+import type { Role } from "~/types/role";
 import { LandlordView } from "./_components/LandlordView";
 import { TenantView } from "./_components/TenantView";
 import { NotaryView } from "./_components/NotaryView";
@@ -14,12 +15,26 @@ const ROLES: { id: Role; label: string }[] = [
 ];
 
 export default function DashboardPage() {
-  const { isConnected, address, activeRole, setRole, disconnect } = useWallet();
+  const {
+    isConnected,
+    address,
+    activeRole,
+    setRole,
+    disconnect,
+    balance,
+    refreshBalance,
+  } = useWallet();
   const router = useRouter();
 
   useEffect(() => {
     if (!isConnected) router.push("/");
   }, [isConnected, router]);
+
+  useEffect(() => {
+    if (address) {
+      void refreshBalance();
+    }
+  }, [address, refreshBalance]);
 
   if (!isConnected || !address) return null;
 
@@ -31,7 +46,19 @@ export default function DashboardPage() {
           Smart Bond Return
         </span>
         <div className="flex items-center gap-3">
-          <span className="max-w-[180px] truncate rounded-full border border-neutral-700 bg-neutral-800 px-3 py-0.5 font-mono text-xs text-neutral-300">
+          {balance !== null && (
+            <span className="rounded-full border border-green-800 bg-green-900/30 px-3 py-0.5 font-mono text-xs text-green-400">
+              {balance} XRP
+            </span>
+          )}
+          <button
+            onClick={() => void refreshBalance()}
+            className="rounded-lg border border-neutral-700 px-2 py-1 text-xs text-neutral-400 hover:border-neutral-500 hover:text-neutral-200"
+            title="Refresh balance"
+          >
+            ↻
+          </button>
+          <span className="max-w-45 truncate rounded-full border border-neutral-700 bg-neutral-800 px-3 py-0.5 font-mono text-xs text-neutral-300">
             {address}
           </span>
           <button

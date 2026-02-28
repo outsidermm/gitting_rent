@@ -37,7 +37,9 @@ const timingMiddleware = t.middleware(async ({ next, path }) => {
   }
 
   const result = await next();
-  console.log(`[TRPC] ${path} took ${Date.now() - start}ms`);
+  if (t._config.isDev) {
+    console.log(`[TRPC] ${path} took ${Date.now() - start}ms`);
+  }
   return result;
 });
 

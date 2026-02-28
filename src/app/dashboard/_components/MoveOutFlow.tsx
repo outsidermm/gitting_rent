@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { api } from "~/trpc/react";
+import { PhotoUploader } from "~/app/ui/photo-uploader";
 
 const CONDITION_OPTIONS = [
   "Excellent — no damage, professionally cleaned",
@@ -10,31 +11,30 @@ const CONDITION_OPTIONS = [
   "Poor — significant damage, major repairs needed",
 ];
 
-interface Props {
+interface MoveOutFlowProps {
   leaseId: string;
   callerAddress: string;
   onSuccess: () => void;
 }
 
-export function MoveOutFlow({ leaseId, callerAddress, onSuccess }: Props) {
+export function MoveOutFlow({
+  leaseId,
+  callerAddress,
+  onSuccess,
+}: MoveOutFlowProps) {
   const [exitCondition, setExitCondition] = useState(CONDITION_OPTIONS[0]!);
   const [customNote, setCustomNote] = useState("");
-  const [photoUrls, setPhotoUrls] = useState("");
+  const [photoUrls, setPhotoUrls] = useState<string[]>([]);
   const [error, setError] = useState("");
 
   const submitEvidence = api.lease.submitEvidence.useMutation({
     onSuccess,
-    onError: (e) => setError(e.message),
+    onError: () => setError("Unable to submit your move-out report. Please try again."),
   });
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError("");
-
-    const urls = photoUrls
-      .split("\n")
-      .map((u) => u.trim())
-      .filter(Boolean);
 
     const fullCondition = customNote.trim()
       ? `${exitCondition} — ${customNote.trim()}`
@@ -44,7 +44,7 @@ export function MoveOutFlow({ leaseId, callerAddress, onSuccess }: Props) {
       leaseId,
       callerAddress,
       exitCondition: fullCondition,
-      exitPhotoUrls: urls,
+      exitPhotoUrls: photoUrls,
     });
   }
 
@@ -88,15 +88,13 @@ export function MoveOutFlow({ leaseId, callerAddress, onSuccess }: Props) {
 
       <div className="space-y-1.5">
         <label className="block text-sm font-medium text-neutral-300">
-          Exit Photo URLs{" "}
-          <span className="font-normal text-neutral-500">(one per line)</span>
+          Exit Photos{" "}
+          <span className="font-normal text-neutral-500">(optional)</span>
         </label>
-        <textarea
-          rows={3}
-          placeholder={"https://…\nhttps://…"}
-          value={photoUrls}
-          onChange={(e) => setPhotoUrls(e.target.value)}
-          className="w-full resize-none rounded-lg border border-neutral-700 bg-neutral-800 px-3 py-2 font-mono text-xs text-neutral-100 placeholder-neutral-500 outline-none focus:border-neutral-500"
+        <PhotoUploader
+          urls={photoUrls}
+          onChange={setPhotoUrls}
+          onError={setError}
         />
       </div>
 

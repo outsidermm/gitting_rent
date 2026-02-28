@@ -57,11 +57,7 @@ export function generateConditionPair(): ConditionPair {
   return encodeConditionPair(preimage);
 }
 
-/**
- * Encode a condition/fulfillment pair from a given preimage.
- * Exported for testing with known preimages.
- */
-export function encodeConditionPair(preimage: Buffer): ConditionPair {
+function encodeConditionPair(preimage: Buffer): ConditionPair {
   const fulfillment = Buffer.concat([FULFILLMENT_PREFIX, preimage]);
 
   // Fingerprint = SHA-256 of the raw preimage (not the fulfillment wrapper)
