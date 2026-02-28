@@ -44,9 +44,6 @@ export default function HomePage() {
       <div className="relative z-10 w-full max-w-md space-y-8">
         {/* Header */}
         <div className="space-y-2 text-center">
-          <div className="inline-flex h-14 w-14 items-center justify-center rounded-full border border-neutral-700 bg-neutral-900/80 text-2xl backdrop-blur-sm">
-            🔐
-          </div>
           <h1 className="text-3xl font-semibold tracking-tight">
             Smart Bond Return
           </h1>
