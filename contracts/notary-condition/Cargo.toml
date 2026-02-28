@@ -1,0 +1,30 @@
+[package]
+name = "notary-condition"
+version = "0.1.0"
+edition = "2024"
+description = "XLS-100 Smart Escrow WASM module — notary-controlled bond release"
+
+[lib]
+crate-type = ["cdylib"]
+path = "src/lib.rs"
+
+[dependencies]
+xrpl-wasm-stdlib = "0.8"
+
+[profile.release]
+# Minimise binary size — critical for on-chain WASM storage
+opt-level = "z"
+lto = true
+codegen-units = 1
+strip = true
+
+# Build commands:
+#
+#   rustup target add wasm32v1-none
+#   cargo build --target wasm32v1-none --release
+#
+# Output:
+#   target/wasm32v1-none/release/notary_condition.wasm
+#
+# The WASM devnet (required — standard devnet lacks XLS-100):
+#   wss://wasm.devnet.rippletest.net:51233

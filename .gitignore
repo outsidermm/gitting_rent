@@ -49,3 +49,8 @@ yarn-error.log*
 # idea files
 .idea
 test-results
+
+# rust / cargo
+contracts/*/target/
+contracts/*/Cargo.lock
+contracts/notary-condition/output/
