@@ -35,14 +35,25 @@ model Lease {
     baselineCondition String
     baselinePhotoUrls String[]
 
-    // XRPL escrow fields (populated after EscrowCreate is confirmed)
+    // ── Penalty escrow (Destination = landlord) ──────────────────────────────
+    // Settled when notary deems exit condition "Poor".
+    // Populated on EscrowCreate confirmation.
     escrowSequence     Int?    // Sequence number of the EscrowCreate tx
     escrowOwnerAddress String? // Account that issued EscrowCreate (tenant)
+    escrowCondition    String? // PREIMAGE-SHA-256 condition (public)
+    escrowFulfillment  String? // Preimage (kept secret until release)
 
-    // Crypto condition for notary-controlled release
-    // Stored as hex strings
-    escrowCondition  String? // PREIMAGE-SHA-256 condition (public)
-    escrowFulfillment String? // Preimage (kept secret until release)
+    // ── Refund escrow (Destination = tenant) ─────────────────────────────────
+    // Settled when notary deems exit condition Excellent / Good / Fair.
+    // Populated on EscrowCreate confirmation alongside the penalty escrow.
+    refundEscrowSequence    Int?
+    refundEscrowCondition   String?
+    refundEscrowFulfillment String?
+
+    // ── Notary verdict (populated on APPROVED) ────────────────────────────────
+    // "refund"  → bond returned to tenant
+    // "penalty" → bond sent to landlord (exit condition was Poor)
+    approvedVerdict String?
 
     status   LeaseStatus @default(PENDING_ESCROW)
     evidence Evidence?

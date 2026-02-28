@@ -92,7 +92,11 @@ export function AuditPanel({
 
       {/* Bond release */}
       <div className="border-t border-neutral-800 p-5">
-        <EscrowFinishFlow leaseId={lease.id} onSuccess={onApproved} />
+        <EscrowFinishFlow
+          leaseId={lease.id}
+          exitCondition={lease.evidence?.exitCondition ?? ""}
+          onSuccess={onApproved}
+        />
       </div>
     </div>
   );

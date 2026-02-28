@@ -8,14 +8,14 @@ const STATUS_LABELS: Record<string, string> = {
   PENDING_ESCROW: "Awaiting Escrow",
   ESCROWED: "Funds Locked",
   MOVE_OUT_PENDING: "Move-Out Review",
-  APPROVED: "Bond Released",
 };
 
 const STATUS_COLORS: Record<string, string> = {
-  PENDING_ESCROW: "bg-yellow-900/30 text-yellow-400",
-  ESCROWED: "bg-blue-900/30 text-blue-400",
-  MOVE_OUT_PENDING: "bg-orange-900/30 text-orange-400",
-  APPROVED: "bg-green-900/30 text-green-400",
+  PENDING_ESCROW:
+    "bg-yellow-950/50 text-yellow-400 border border-yellow-900/50",
+  ESCROWED: "bg-blue-950/50 text-blue-400 border border-blue-900/50",
+  MOVE_OUT_PENDING:
+    "bg-orange-950/50 text-orange-400 border border-orange-900/50",
 };
 
 interface LeaseCardProps {
@@ -28,10 +28,27 @@ export function LeaseCard({ lease, perspective, actions }: LeaseCardProps) {
   const xrpAmount = dropsToXrp(lease.bondAmountDrops);
   const exitPhotos = lease.evidence?.exitPhotoUrls ?? [];
 
+  // Dynamically determine label and styling based on the Notary's verdict
+  let statusLabel = STATUS_LABELS[lease.status] ?? lease.status;
+  let statusColor =
+    STATUS_COLORS[lease.status] ?? "bg-neutral-800 text-neutral-400";
+
+  if (lease.status === "APPROVED") {
+    if (lease.approvedVerdict === "penalty") {
+      statusLabel = "Notary Verdict: Landlord Paid (Poor Condition)";
+      statusColor =
+        "bg-red-950/80 text-red-400 border border-red-800/60 font-bold shadow-sm shadow-red-900/20";
+    } else {
+      statusLabel = "Notary Verdict: Tenant Refunded (Condition OK)";
+      statusColor =
+        "bg-green-950/80 text-green-400 border border-green-800/60 font-bold shadow-sm shadow-green-900/20";
+    }
+  }
+
   return (
     <div className="overflow-hidden rounded-xl border border-neutral-800 bg-neutral-900/80 backdrop-blur-sm">
       {/* Header */}
-      <div className="flex items-center justify-between px-6 pt-5 pb-3">
+      <div className="flex flex-wrap items-center justify-between gap-4 px-6 pt-5 pb-3">
         <div className="flex items-center gap-4">
           <span className="font-mono text-xs text-neutral-500">
             #{lease.id.slice(-8).toUpperCase()}
@@ -44,16 +61,16 @@ export function LeaseCard({ lease, perspective, actions }: LeaseCardProps) {
           </span>
         </div>
         <span
-          className={`shrink-0 rounded-full px-2.5 py-0.5 text-xs font-medium ${STATUS_COLORS[lease.status] ?? ""}`}
+          className={`shrink-0 rounded-full px-3 py-1 text-xs font-medium ${statusColor}`}
         >
-          {STATUS_LABELS[lease.status] ?? lease.status}
+          {statusLabel}
         </span>
       </div>
 
       {/* Body */}
       <div className="space-y-4 px-6 pb-6">
         {/* Addresses */}
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           <AddressChip
             label="Landlord"
             address={lease.landlordAddress}
@@ -100,7 +117,9 @@ export function LeaseCard({ lease, perspective, actions }: LeaseCardProps) {
         )}
 
         {/* Actions */}
-        {actions && <div className="border-t border-neutral-800 pt-4">{actions}</div>}
+        {actions && (
+          <div className="border-t border-neutral-800 pt-4">{actions}</div>
+        )}
       </div>
     </div>
   );

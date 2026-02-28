@@ -1,19 +1,24 @@
 /**
- * Build the notary-condition WASM contract for a specific notary address.
+ * Build the notary-condition WASM contract for a specific notary address and
+ * verdict (refund or penalty).
  *
- * This script is the bridge between the web application and the Rust contract.
- * It receives a notary r-address (from the lease form / DB) and bakes it into
- * the compiled WASM binary via Cargo's NOTARY_ADDRESS env var → build.rs.
+ * Two variants are built per lease:
+ *   verdict="refund"  → Destination=tenant   (Excellent/Good/Fair outcome)
+ *   verdict="penalty" → Destination=landlord (Poor outcome)
+ *
+ * The variant is baked into the binary via WASM_VERDICT → build.rs → verdict.rs.
  *
  * Usage (CLI):
- *   pnpm tsx scripts/build-notary-wasm.ts --notary rYourNotaryAddress
+ *   pnpm tsx scripts/build-notary-wasm.ts --notary rAddr --verdict refund
+ *   pnpm tsx scripts/build-notary-wasm.ts --notary rAddr --verdict penalty
  *
  * Usage (from tRPC / server code):
  *   import { buildNotaryWasm } from "~/scripts/build-notary-wasm"
- *   const { wasmHex, wasmPath } = await buildNotaryWasm("rYourNotaryAddress")
+ *   const { wasmHex } = await buildNotaryWasm("rAddr", "refund")
+ *   const { wasmHex } = await buildNotaryWasm("rAddr", "penalty")
  *
  * Output:
- *   - WASM binary at contracts/notary-condition/output/<address>.wasm
+ *   - WASM binary at contracts/notary-condition/output/<address>-<verdict>.wasm
  *   - Returns the hex-encoded binary (ready to upload to XRPL as SmartContract)
  */
 
@@ -32,30 +37,36 @@ const WASM_SRC = resolve(
   "target/wasm32v1-none/release/notary_condition.wasm",
 );
 
-/** Build the WASM for the given notary address. Returns hex + output path. */
-export async function buildNotaryWasm(notaryAddress: string): Promise<{
+export type WasmVerdict = "refund" | "penalty";
+
+/** Build the WASM for the given notary address and verdict. Returns hex + output path. */
+export async function buildNotaryWasm(
+  notaryAddress: string,
+  verdict: WasmVerdict = "refund",
+): Promise<{
   wasmHex: string;
   wasmPath: string;
 }> {
   if (!notaryAddress.startsWith("r") || notaryAddress.length < 25) {
     throw new Error(`Invalid XRPL address: ${notaryAddress}`);
   }
+  if (verdict !== "refund" && verdict !== "penalty") {
+    throw new Error(`verdict must be "refund" or "penalty", got: ${verdict}`);
+  }
 
-  // Resolve cargo binary (supports rustup installations)
   const cargoBin = resolveCargo();
-
   mkdirSync(OUTPUT_DIR, { recursive: true });
 
-  const destPath = join(OUTPUT_DIR, `${notaryAddress}.wasm`);
+  const destPath = join(OUTPUT_DIR, `${notaryAddress}-${verdict}.wasm`);
 
-  console.log(`Building WASM contract for notary: ${notaryAddress}`);
+  console.log(`Building WASM contract — notary: ${notaryAddress}, verdict: ${verdict}`);
   console.log(`Contract dir: ${CONTRACT_DIR}`);
 
   execSync(
     `${cargoBin} build --target wasm32v1-none --release`,
     {
       cwd: CONTRACT_DIR,
-      env: { ...process.env, NOTARY_ADDRESS: notaryAddress },
+      env: { ...process.env, NOTARY_ADDRESS: notaryAddress, WASM_VERDICT: verdict },
       stdio: "inherit",
     },
   );
@@ -70,9 +81,10 @@ export async function buildNotaryWasm(notaryAddress: string): Promise<{
   const wasmHex = wasmBytes.toString("hex").toUpperCase();
 
   console.log(`\nWASM built successfully:`);
-  console.log(`  Path : ${destPath}`);
-  console.log(`  Size : ${wasmBytes.length} bytes`);
-  console.log(`  Hex  : ${wasmHex.slice(0, 40)}…`);
+  console.log(`  Path    : ${destPath}`);
+  console.log(`  Verdict : ${verdict}`);
+  console.log(`  Size    : ${wasmBytes.length} bytes`);
+  console.log(`  Hex     : ${wasmHex.slice(0, 40)}…`);
 
   return { wasmHex, wasmPath: destPath };
 }
@@ -103,18 +115,27 @@ const isMain = process.argv[1] === fileURLToPath(import.meta.url);
 if (isMain) {
   const args = process.argv.slice(2);
   const notaryFlag = args.indexOf("--notary");
+  const verdictFlag = args.indexOf("--verdict");
 
   if (notaryFlag === -1 || !args[notaryFlag + 1]) {
-    console.error("Usage: pnpm tsx scripts/build-notary-wasm.ts --notary <r-address>");
+    console.error(
+      "Usage: pnpm tsx scripts/build-notary-wasm.ts --notary <r-address> [--verdict refund|penalty]",
+    );
     process.exit(1);
   }
 
   const notaryAddress = args[notaryFlag + 1]!;
+  const rawVerdict = verdictFlag !== -1 ? args[verdictFlag + 1] : "refund";
+  if (rawVerdict !== "refund" && rawVerdict !== "penalty") {
+    console.error(`--verdict must be "refund" or "penalty", got: ${rawVerdict ?? "(none)"}`);
+    process.exit(1);
+  }
+  const verdict: WasmVerdict = rawVerdict;
 
-  buildNotaryWasm(notaryAddress)
+  buildNotaryWasm(notaryAddress, verdict)
     .then(({ wasmHex, wasmPath }) => {
       console.log("\n─────────────────────────────────────────────────────");
-      console.log("Add to EscrowCreate transaction:");
+      console.log(`Add to EscrowCreate transaction (${verdict} escrow):`);
       console.log(`  SmartContract: "${wasmHex}"`);
       console.log("\nFile saved to:");
       console.log(`  ${wasmPath}`);

@@ -19,6 +19,8 @@ export const approveRefund = publicProcedure
     z.object({
       leaseId: z.string(),
       callerAddress: z.string().min(25),
+      /** Which escrow was settled on-chain: "refund" = tenant received bond, "penalty" = landlord received bond. */
+      verdict: z.enum(["refund", "penalty"]),
     }),
   )
   .mutation(async ({ ctx, input }) => {
@@ -46,6 +48,10 @@ export const approveRefund = publicProcedure
 
     return ctx.db.lease.update({
       where: { id: input.leaseId },
-      data: { status: "APPROVED" },
+      data: {
+        status: "APPROVED",
+        // Persist the notary's verdict for audit trail and UI display
+        approvedVerdict: input.verdict,
+      },
     });
   });
