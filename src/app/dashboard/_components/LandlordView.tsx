@@ -110,6 +110,7 @@ function CreateLeaseForm({ landlordAddress, onCreated }: CreateLeaseFormProps) {
     e.preventDefault();
     setError("");
 
+    // Basic client-side validation
     if (!form.propertyAddress.trim()) {
       setError("Property address is required.");
       return;
@@ -171,89 +172,76 @@ function CreateLeaseForm({ landlordAddress, onCreated }: CreateLeaseFormProps) {
   return (
     <form
       onSubmit={handleSubmit}
-      className="overflow-hidden rounded-xl border border-neutral-800 bg-neutral-900/80 backdrop-blur-sm"
+      className="space-y-5 rounded-xl border border-neutral-800 bg-neutral-900 p-6"
     >
-      <div className="border-b border-neutral-800/60 px-6 py-4">
-        <h3 className="font-semibold text-neutral-100">New Lease</h3>
-        <p className="text-xs text-neutral-500">
-          Fill in the details to create a new bond lease
+      <h3 className="font-medium text-neutral-200">New Lease</h3>
+
+      <Field
+        label="Property Address"
+        placeholder="123 Main St, City, State"
+        value={form.propertyAddress}
+        onChange={(v) => setForm((f) => ({ ...f, propertyAddress: v }))}
+      />
+      <Field
+        label="Tenant XRPL Address"
+        placeholder="rXXXXXXXXXXXXXXXXXXXXXXXXXXX"
+        value={form.tenantAddress}
+        onChange={(v) => setForm((f) => ({ ...f, tenantAddress: v }))}
+      />
+      <Field
+        label="Notary XRPL Address"
+        placeholder="rXXXXXXXXXXXXXXXXXXXXXXXXXXX"
+        value={form.notaryAddress}
+        onChange={(v) => setForm((f) => ({ ...f, notaryAddress: v }))}
+      />
+      <Field
+        label="Bond Amount (XRP)"
+        placeholder="10"
+        type="number"
+        value={form.bondAmountXrp}
+        onChange={(v) => setForm((f) => ({ ...f, bondAmountXrp: v }))}
+      />
+
+      <div className="space-y-1.5">
+        <label className="block text-sm font-medium text-neutral-300">
+          Baseline Condition
+        </label>
+        <textarea
+          rows={3}
+          placeholder="Describe the property's current condition…"
+          value={form.baselineCondition}
+          onChange={(e) =>
+            setForm((f) => ({ ...f, baselineCondition: e.target.value }))
+          }
+          className="w-full resize-none rounded-lg border border-neutral-700 bg-neutral-800 px-3 py-2 text-sm text-neutral-100 placeholder-neutral-500 outline-none focus:border-neutral-500"
+        />
+      </div>
+
+      <div className="space-y-1.5">
+        <label className="block text-sm font-medium text-neutral-300">
+          Baseline Photos{" "}
+          <span className="font-normal text-neutral-500">(optional)</span>
+        </label>
+        <PhotoUploader
+          urls={baselinePhotoUrls}
+          onChange={setBaselinePhotoUrls}
+          onError={setError}
+        />
+      </div>
+
+      {error && (
+        <p className="rounded-lg bg-red-950/60 px-3 py-2 text-xs text-red-400">
+          {error}
         </p>
-      </div>
+      )}
 
-      <div className="space-y-5 p-6">
-        {/* Two-column grid for the address fields */}
-        <div className="grid gap-5 sm:grid-cols-2">
-          <Field
-            label="Property Address"
-            placeholder="123 Main St, City, State"
-            value={form.propertyAddress}
-            onChange={(v) => setForm((f) => ({ ...f, propertyAddress: v }))}
-          />
-          <Field
-            label="Bond Amount (XRP)"
-            placeholder="10"
-            type="number"
-            value={form.bondAmountXrp}
-            onChange={(v) => setForm((f) => ({ ...f, bondAmountXrp: v }))}
-          />
-        </div>
-
-        <div className="grid gap-5 sm:grid-cols-2">
-          <Field
-            label="Tenant XRPL Address"
-            placeholder="rXXXXXXXXXXXXXXXXXXXXXXXXXXX"
-            value={form.tenantAddress}
-            onChange={(v) => setForm((f) => ({ ...f, tenantAddress: v }))}
-          />
-          <Field
-            label="Notary XRPL Address"
-            placeholder="rXXXXXXXXXXXXXXXXXXXXXXXXXXX"
-            value={form.notaryAddress}
-            onChange={(v) => setForm((f) => ({ ...f, notaryAddress: v }))}
-          />
-        </div>
-
-        <div className="space-y-1.5">
-          <label className="block text-sm font-medium text-neutral-300">
-            Baseline Condition
-          </label>
-          <textarea
-            rows={3}
-            placeholder="Describe the property's current condition…"
-            value={form.baselineCondition}
-            onChange={(e) =>
-              setForm((f) => ({ ...f, baselineCondition: e.target.value }))
-            }
-            className="w-full resize-none rounded-lg border border-neutral-700 bg-neutral-800/80 px-3 py-2 text-sm text-neutral-100 placeholder-neutral-500 outline-none transition focus:border-neutral-500"
-          />
-        </div>
-
-        <div className="space-y-1.5">
-          <label className="block text-sm font-medium text-neutral-300">
-            Baseline Photos{" "}
-            <span className="font-normal text-neutral-500">(optional)</span>
-          </label>
-          <PhotoUploader
-            urls={baselinePhotoUrls}
-            onChange={setBaselinePhotoUrls}
-            onError={setError}
-          />
-        </div>
-
-        {error && (
-          <p className="rounded-lg bg-red-950/60 px-3 py-2 text-xs text-red-400">
-            {error}
-          </p>
-        )}
-
-        <button
-          type="submit"
-          disabled={createLease.isPending}
-          className="w-full rounded-lg bg-neutral-100 py-2.5 text-sm font-semibold text-neutral-900 transition hover:bg-white disabled:opacity-40"
-        >
-          {createLease.isPending ? "Creating…" : "Create Lease"}
-        </button>
-      </div>
+      <button
+        type="submit"
+        disabled={createLease.isPending}
+        className="w-full rounded-lg bg-neutral-100 py-2.5 text-sm font-semibold text-neutral-900 transition hover:bg-white disabled:opacity-40"
+      >
+        {createLease.isPending ? "Creating…" : "Create Lease"}
+      </button>
     </form>
   );
 }
@@ -283,7 +271,7 @@ function Field({
         placeholder={placeholder}
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        className="w-full rounded-lg border border-neutral-700 bg-neutral-800/80 px-3 py-2 text-sm text-neutral-100 placeholder-neutral-500 outline-none transition focus:border-neutral-500"
+        className="w-full rounded-lg border border-neutral-700 bg-neutral-800 px-3 py-2 text-sm text-neutral-100 placeholder-neutral-500 outline-none focus:border-neutral-500"
       />
     </div>
   );

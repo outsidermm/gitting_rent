@@ -104,7 +104,7 @@ export function EscrowFinishFlow({ leaseId, onSuccess }: EscrowFinishFlowProps) 
   const xrpAmount = dropsToXrp(data.lease.bondAmountDrops);
 
   return (
-    <div className="space-y-4 rounded-xl border border-green-900/50 bg-green-950/20 p-5">
+    <div className="space-y-4">
       <h4 className="font-medium text-green-300">Release Bond</h4>
 
       {step === "done" ? (
@@ -120,7 +120,7 @@ export function EscrowFinishFlow({ leaseId, onSuccess }: EscrowFinishFlowProps) 
         </div>
       ) : (
         <>
-          <div className="space-y-1 rounded-lg border border-green-900/40 bg-green-950/30 p-4 text-sm">
+          <div className="space-y-1 rounded-lg bg-neutral-800/40 p-4 text-sm">
             <Row label="Bond amount" value={`${xrpAmount} XRP`} />
             <Row label="Tenant" value={`${data.lease.tenantAddress.slice(0, 14)}…`} mono />
             <Row label="Reference" value={`#${String(data.lease.escrowSequence)}`} />

@@ -15,9 +15,9 @@ export function AuditPanel({
   const xrpAmount = dropsToXrp(lease.bondAmountDrops);
 
   return (
-    <div className="overflow-hidden rounded-xl border border-orange-900/40 bg-neutral-900/80 backdrop-blur-sm">
+    <div className="rounded-xl border border-neutral-800 bg-neutral-900/80 backdrop-blur-sm">
       {/* Header */}
-      <div className="flex items-center justify-between border-b border-orange-900/30 bg-orange-950/15 px-6 py-3.5">
+      <div className="flex items-center justify-between px-6 pt-5 pb-4">
         <div className="flex items-center gap-4">
           <span className="font-mono text-xs text-neutral-500">
             #{lease.id.slice(-8).toUpperCase()}
@@ -29,15 +29,15 @@ export function AuditPanel({
             Tenant {lease.tenantAddress.slice(0, 10)}…
           </span>
         </div>
-        <span className="rounded-full border border-orange-800/60 bg-orange-900/30 px-2.5 py-0.5 text-xs font-medium text-orange-400">
+        <span className="rounded-full bg-orange-900/30 px-2.5 py-0.5 text-xs font-medium text-orange-400">
           Move-Out Pending
         </span>
       </div>
 
       {/* Side-by-side comparison */}
-      <div className="grid grid-cols-2 divide-x divide-neutral-800/60">
+      <div className="grid grid-cols-2 gap-6 px-6">
         {/* Baseline */}
-        <div className="space-y-3 p-6">
+        <div className="space-y-3 rounded-lg bg-neutral-800/40 p-4">
           <h4 className="text-xs font-semibold tracking-wide text-neutral-400 uppercase">
             Baseline (Move-In)
           </h4>
@@ -50,7 +50,7 @@ export function AuditPanel({
         </div>
 
         {/* Move-out */}
-        <div className="space-y-3 p-6">
+        <div className="space-y-3 rounded-lg bg-neutral-800/40 p-4">
           <h4 className="text-xs font-semibold tracking-wide text-neutral-400 uppercase">
             Exit (Move-Out)
           </h4>
@@ -70,7 +70,7 @@ export function AuditPanel({
       </div>
 
       {/* Approve section */}
-      <div className="border-t border-neutral-800/60 p-6">
+      <div className="px-6 pt-5 pb-6">
         <EscrowFinishFlow leaseId={lease.id} onSuccess={onApproved} />
       </div>
     </div>

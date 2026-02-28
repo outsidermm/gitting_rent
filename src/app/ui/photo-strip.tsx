@@ -7,7 +7,7 @@ export function PhotoStrip({ urls }: { urls: string[] }) {
           href={url}
           target="_blank"
           rel="noopener noreferrer"
-          className="group overflow-hidden rounded-lg border border-neutral-700/60"
+          className="group overflow-hidden rounded-lg"
         >
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
