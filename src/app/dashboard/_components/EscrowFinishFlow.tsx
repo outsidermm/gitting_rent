@@ -13,17 +13,15 @@ import { useState } from "react";
 import { Wallet, Client, dropsToXrp } from "xrpl";
 import { useWallet } from "~/context/WalletContext";
 import { api } from "~/trpc/react";
+import { DEVNET_WSS } from "~/app/constants";
+import type { Step } from "~/types/step";
 
-const DEVNET_WSS = "wss://s.devnet.rippletest.net:51233";
-
-interface Props {
+interface EscrowFinishFlowProps {
   leaseId: string;
   onSuccess: () => void;
 }
 
-type Step = "review" | "signing" | "confirming" | "done";
-
-export function EscrowFinishFlow({ leaseId, onSuccess }: Props) {
+export function EscrowFinishFlow({ leaseId, onSuccess }: EscrowFinishFlowProps) {
   const { seed, address } = useWallet();
   const [step, setStep] = useState<Step>("review");
   const [error, setError] = useState("");

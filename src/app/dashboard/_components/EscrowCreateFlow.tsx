@@ -14,17 +14,19 @@ import { Wallet, Client, dropsToXrp } from "xrpl";
 import type { EscrowCreate } from "xrpl";
 import { useWallet } from "~/context/WalletContext";
 import { api } from "~/trpc/react";
+import type { Step } from "~/types/step";
+import { Row } from "~/app/ui/row";
+import { DEVNET_WSS } from "~/app/constants";
 
-const DEVNET_WSS = "wss://s.devnet.rippletest.net:51233";
-
-interface Props {
+interface EscrowCreateFlowProps {
   leaseId: string;
   onSuccess: () => void;
 }
 
-type Step = "review" | "signing" | "confirming" | "done";
-
-export function EscrowCreateFlow({ leaseId, onSuccess }: Props) {
+export function EscrowCreateFlow({
+  leaseId,
+  onSuccess,
+}: EscrowCreateFlowProps) {
   const { seed, address } = useWallet();
   const [step, setStep] = useState<Step>("review");
   const [error, setError] = useState("");
@@ -193,27 +195,6 @@ export function EscrowCreateFlow({ leaseId, onSuccess }: Props) {
           )}
         </>
       )}
-    </div>
-  );
-}
-
-function Row({
-  label,
-  value,
-  mono,
-}: {
-  label: string;
-  value: string;
-  mono?: boolean;
-}) {
-  return (
-    <div className="flex justify-between gap-4">
-      <span className="text-neutral-500">{label}</span>
-      <span
-        className={`text-right ${mono ? "font-mono text-xs" : ""} text-neutral-200`}
-      >
-        {value}
-      </span>
     </div>
   );
 }

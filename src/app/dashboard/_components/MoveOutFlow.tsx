@@ -10,13 +10,17 @@ const CONDITION_OPTIONS = [
   "Poor — significant damage, major repairs needed",
 ];
 
-interface Props {
+interface MoveOutFlowProps {
   leaseId: string;
   callerAddress: string;
   onSuccess: () => void;
 }
 
-export function MoveOutFlow({ leaseId, callerAddress, onSuccess }: Props) {
+export function MoveOutFlow({
+  leaseId,
+  callerAddress,
+  onSuccess,
+}: MoveOutFlowProps) {
   const [exitCondition, setExitCondition] = useState(CONDITION_OPTIONS[0]!);
   const [customNote, setCustomNote] = useState("");
   const [photoUrls, setPhotoUrls] = useState("");
