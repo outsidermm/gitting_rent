@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useWallet } from "~/context/WalletContext";
 import { api } from "~/trpc/react";
+import { PhotoUploader } from "~/app/ui/photo-uploader";
 import { LeaseCard } from "./LeaseCard";
 
 export function LandlordView() {
@@ -75,8 +76,8 @@ function CreateLeaseForm({ landlordAddress, onCreated }: CreateLeaseFormProps) {
     notaryAddress: "",
     bondAmountXrp: "",
     baselineCondition: "",
-    baselinePhotoUrls: "",
   });
+  const [baselinePhotoUrls, setBaselinePhotoUrls] = useState<string[]>([]);
   const [error, setError] = useState("");
 
   const isValidXrpAddress = (address: string): boolean => {
@@ -108,11 +109,6 @@ function CreateLeaseForm({ landlordAddress, onCreated }: CreateLeaseFormProps) {
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError("");
-
-    const photoUrls = form.baselinePhotoUrls
-      .split("\n")
-      .map((u) => u.trim())
-      .filter(Boolean);
 
     // Basic client-side validation
     if (!form.propertyAddress.trim()) {
@@ -169,7 +165,7 @@ function CreateLeaseForm({ landlordAddress, onCreated }: CreateLeaseFormProps) {
       notaryAddress: form.notaryAddress.trim(),
       bondAmountXrp: form.bondAmountXrp.trim(),
       baselineCondition: form.baselineCondition.trim(),
-      baselinePhotoUrls: photoUrls,
+      baselinePhotoUrls,
     });
   }
 
@@ -223,17 +219,13 @@ function CreateLeaseForm({ landlordAddress, onCreated }: CreateLeaseFormProps) {
 
       <div className="space-y-1.5">
         <label className="block text-sm font-medium text-neutral-300">
-          Baseline Photo URLs{" "}
-          <span className="font-normal text-neutral-500">(one per line)</span>
+          Baseline Photos{" "}
+          <span className="font-normal text-neutral-500">(optional)</span>
         </label>
-        <textarea
-          rows={3}
-          placeholder={"https://…\nhttps://…"}
-          value={form.baselinePhotoUrls}
-          onChange={(e) =>
-            setForm((f) => ({ ...f, baselinePhotoUrls: e.target.value }))
-          }
-          className="w-full resize-none rounded-lg border border-neutral-700 bg-neutral-800 px-3 py-2 font-mono text-xs text-neutral-100 placeholder-neutral-500 outline-none focus:border-neutral-500"
+        <PhotoUploader
+          urls={baselinePhotoUrls}
+          onChange={setBaselinePhotoUrls}
+          onError={setError}
         />
       </div>
 
