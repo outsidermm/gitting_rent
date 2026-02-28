@@ -21,7 +21,7 @@ export const create = publicProcedure
       bondAmountXrp: z
         .string()
         .regex(/^\d+(\.\d+)?$/, "Must be a positive number"),
-      baselineCondition: z.string().min(1),
+      baselineCondition: z.string().max(2000),
       baselinePhotoUrls: z.array(z.string().url()),
     }),
   )
