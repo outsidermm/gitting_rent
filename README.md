@@ -1,46 +1,171 @@
-# Smart Bond Return (A Decentralized Rental Deposit Protocol)
+# Smart Bond Return
 
-## The Problem
-Managing rental security deposits relies on centralized holding accounts, physical paperwork, and slow manual bank transfers. Disputes over final property conditions cause severe bottlenecks, administrative overhead, and delayed refunds for tenants. 
+> **Trustless rental deposits on the XRP Ledger — no lawyers, no delays, no disputes.**
 
-## The XRPL Solution
-An automated "Smart Bond Return" system utilizing XRPL Smart Escrows (XLS-100) and a multi-role decentralized application. The system eliminates centralized custody by locking a tenant's security deposit in an RLUSD smart escrow. 
-
-The platform supports three distinct user roles: **Landlord**, **Tenant**, and **Notary** (Auditor). A single user can play any of these roles across different transactions. Upon move-out, an independent Notary reviews the final condition. Once approved, the Notary provides cryptographic authorization, triggering the escrow's custom logic to instantly release the bond directly to the tenant's wallet.
+[![Live Demo](https://img.shields.io/badge/Live%20Demo-gitting--rent.vercel.app-6366f1?style=for-the-badge&logo=vercel)](https://gitting-rent.vercel.app)
+[![XRPL Devnet](https://img.shields.io/badge/XRPL-Devnet-00adef?style=for-the-badge)](https://devnet.xrpl.org)
+[![Built with T3](https://img.shields.io/badge/Built%20with-T3%20Stack-7c3aed?style=for-the-badge)](https://create.t3.gg)
+[![XLS-100](https://img.shields.io/badge/XLS--100-Smart%20Escrow-f59e0b?style=for-the-badge)](https://github.com/XRPLF/XRPL-Standards)
 
 ---
 
-## 1. System Architecture (The T3 Stack + XRPL)
-The application relies on the T3 Stack (`create-t3-app`) for a rapid, fully type-safe development environment.
-* **Frontend**: Next.js (React), Tailwind CSS, and lightweight wallet connection hooks. The UI is heavily minimalistic to allow seamless switching between Landlord, Tenant, and Notary views.
-* **Backend**: tRPC (TypeScript Remote Procedure Call). tRPC allows the frontend to call backend server functions directly with full TypeScript type safety.
-* **Database**: Prisma ORM with a lightweight PostgreSQL database to store off-chain lease metadata, condition requirements, and photo URIs.
-* **Layer-1 Network**: XRPL Testnet/Devnet utilizing the XLS-100 Smart Escrow amendment and standard `xrpl.js` API integration.
+## The Problem
 
-## 2. XRPL Layer-1 Logic (Smart Escrow & Validation)
-Instead of relying on a centralized database to hold funds, the application utilizes XRPL's native Smart Escrows.
-* **The Notary Pattern**: The Smart Escrow is configured as a "Notary Escrow". A small WebAssembly (WASM) script checks the release condition.
-* **Release Condition**: The WASM code is programmed to read the `EscrowFinish` transaction. If the transaction contains a valid cryptographic signature from the designated "Notary" wallet address linked to the lease, it returns `true` and releases the RLUSD to the Tenant's destination wallet.
-* **XRPL Tooling**: Implementation relies on `xrpl.js` (referencing standard XRPL API flows) connected to `wss://s.devnet.rippletest.net:51233` for development.
+Every renter knows the feeling: you hand over a security deposit and cross your fingers you'll see it again. Landlords hold funds in personal accounts. Disputes over property condition drag on for weeks. Bank transfers take days. The whole system runs on trust — which is exactly why it keeps breaking.
 
-## 3. Backend Requirements (tRPC & Database)
-The backend acts as a secure coordinator for off-chain state and transaction preparation.
-* **Lease Initialization**: Landlords can submit a new lease transaction. The DB records the Landlord wallet, Tenant (Destination) wallet, current house condition (photos/text), and required exit condition.
-* **Evidence Handling**: A tRPC mutation allows Tenants to upload move-out photos and complete condition dropdowns, linking these to the specific lease ID.
-* **Transaction Construction**: When the Notary approves the condition, the backend constructs the `EscrowFinish` payload for the Notary to sign via their connected wallet.
+**Smart Bond Return replaces trust with code.**
 
-## 4. Frontend Requirements (Next.js & Tailwind)
-The frontend provides a frictionless, minimalistic user experience. A unified dashboard allows users to easily toggle their active role.
-* **Authentication**: Simple "Connect Wallet" functionality.
-* **Unified Dashboard - Minimalistic Role Switching**:
-    * **Landlord View**: Create a new lease transaction (link tenant wallet, set deposit amount, upload baseline condition). View active properties and bond statuses.
-    * **Tenant View**: View active lease requests. A "Deposit Bond" button to construct and sign the `EscrowCreate` transaction. A "Move Out" flow to upload final photos and fill out the condition dropdown.
-    * **Notary View**: A feed of pending move-out audits. View side-by-side baseline and exit photos/dropdowns. An "Approve" button that prompts their wallet to sign the `EscrowFinish` transaction.
-* **Real-Time State Updates**: Utilize WebSocket subscriptions (`xrpl.Client` 'transaction' events) to listen for the `EscrowFinish` ledger close, updating the UI instantly upon successful refund.
+---
 
-## 5. Step-by-Step Execution Flow
-1.  **Initiation**: The Landlord creates a lease on the app, linking the Tenant's destination wallet, setting the bond amount, and stating the baseline conditions.
-2.  **Locking**: The Tenant connects their wallet, reviews the terms, and signs an `EscrowCreate` transaction, locking the required RLUSD on the XRPL Devnet.
-3.  **Move Out**: At lease end, the Tenant uploads exit photos and selects the property condition via dropdowns.
-4.  **Audit**: A designated Notary logs in, navigates to the Notary tab, and reviews the submitted evidence against the Landlord's requirements.
-5.  **Settlement**: The Notary clicks "Approve" and signs the `EscrowFinish` transaction. The XRPL verifies the Notary's signature and autonomously releases the funds to the Tenant's wallet.
+## How It Works
+
+Three parties, zero intermediaries. A tenant's bond is locked on-chain the moment they sign, and released automatically the moment a notary approves — all without touching a bank or a lawyer.
+
+```
+Landlord                Tenant                 Notary (Auditor)
+   │                      │                         │
+   │  1. Create Lease      │                         │
+   │─────────────────────►│                         │
+   │                      │                         │
+   │                      │  2. Lock Bond On-Chain  │
+   │                      │  (Two XRPL Escrows)     │
+   │                      │─────────────────────────│
+   │                      │                         │
+   │                      │  3. Submit Move-Out      │
+   │                      │  Evidence + Photos      │
+   │                      │────────────────────────►│
+   │                      │                         │
+   │                      │                         │  4. Review & Verdict
+   │                      │◄────────────────────────│  ✓ Condition OK  → Bond → Tenant
+   │◄─────────────────────│─────────────────────────│  ✗ Condition Poor → Bond → Landlord
+```
+
+---
+
+## Three Roles, One Dashboard
+
+Users connect their XRPL wallet and switch between any role they hold across their leases.
+
+### 🏠 Landlord
+- Creates a lease: links tenant + notary wallet addresses, sets bond amount, documents baseline property condition with photos and a written description
+- Monitors bond status in real time — no chasing banks
+
+### 🔑 Tenant
+- Reviews lease terms and locks the bond on-chain with a single click
+- Submits move-out evidence (photos + condition rating) when ready to leave
+- If the notary rules in their favour: bond returns to their wallet automatically
+- If not: the unused "refund" escrow can be cancelled back after the lock period expires
+
+### ⚖️ Notary
+- Reviews side-by-side baseline vs. exit evidence submitted by the tenant
+- Selects a verdict: **Refund** (condition acceptable) or **Penalty** (condition poor)
+- Signs a single `EscrowFinish` transaction — the funds move instantly, on-chain
+
+---
+
+## The Dual-Escrow Design
+
+This is the core innovation. XRPL escrow destinations are fixed at creation time — you can't change where the money goes after the fact. So we create **two escrows simultaneously** when the tenant deposits:
+
+| Escrow | Destination | Settled When |
+|--------|------------|--------------|
+| **Penalty** | Landlord's wallet | Notary rules condition is "Poor" |
+| **Refund** | Tenant's own wallet | Notary rules condition is OK |
+
+The notary selects a verdict. The server releases the cryptographic fulfillment for the matching escrow. The other escrow expires after a short lock period and can be cancelled by the tenant — no funds ever get stuck.
+
+```
+Tenant signs two EscrowCreate txs
+         │
+         ├── Penalty Escrow ──► Destination: Landlord
+         │                      Released if: Notary signs penalty verdict
+         │
+         └── Refund Escrow  ──► Destination: Tenant
+                                Released if: Notary signs refund verdict
+
+Unused escrow expires → Tenant cancels via EscrowCancel
+```
+
+---
+
+## XRPL Smart Escrow (XLS-100 WASM)
+
+The settlement logic lives in a **Rust-compiled WebAssembly module** deployed directly on the XRP Ledger via the XLS-100 Smart Escrow amendment — no server involved at the moment of settlement.
+
+The WASM is compiled with two things baked in at build time:
+- The **notary's XRPL address** — only that specific wallet can trigger settlement
+- The **verdict** (`refund` or `penalty`) — the WASM emits this as an on-chain trace
+
+Settlement flow:
+1. Notary clicks "Sign & Settle" in the UI
+2. Browser constructs and signs an `EscrowFinish` transaction
+3. XRPL runs the WASM: checks that the signer matches the embedded notary address
+4. If it matches → escrow releases to its destination
+5. On-chain trace records the verdict permanently
+
+The **PREIMAGE-SHA-256 fulfillment** (the cryptographic key that unlocks the escrow) is generated server-side and never sent to the client until the notary is verified and a verdict is chosen.
+
+---
+
+## Tech Stack
+
+| Layer | Technology |
+|-------|-----------|
+| Frontend | Next.js 15 (App Router), Tailwind CSS 4 |
+| API | tRPC with end-to-end TypeScript types |
+| Database | Prisma 7 + PostgreSQL (lease metadata, condition records) |
+| Blockchain | XRPL Devnet via `xrpl.js` v4 |
+| Smart Contract | Rust → WASM (XLS-100 Smart Escrow) |
+| Deployment | Vercel + Prisma Postgres |
+
+**Security model:** The wallet seed never leaves the browser. All XRPL signing happens client-side using `xrpl.js`. The server only ever sees addresses and transaction results.
+
+---
+
+## Running Locally
+
+```bash
+# Clone and install
+git clone https://github.com/your-org/gitting-rent
+cd gitting-rent
+pnpm install
+
+# Set up environment
+cp .env.example .env
+# Add your DATABASE_URL and other vars
+
+# Set up the database
+pnpm prisma db push
+
+# Start development server
+pnpm dev
+```
+
+Open [http://localhost:3000](http://localhost:3000). Connect an XRPL Devnet wallet to get started. You can fund a test wallet at the [XRPL Faucet](https://faucet.altnet.rippletest.net/accounts).
+
+---
+
+## Building the WASM Contract
+
+```bash
+# Build for a refund verdict (bond → tenant)
+pnpm tsx scripts/build-notary-wasm.ts --address rNotaryAddress123 --verdict refund
+
+# Build for a penalty verdict (bond → landlord)
+pnpm tsx scripts/build-notary-wasm.ts --address rNotaryAddress123 --verdict penalty
+```
+
+Requires the Rust toolchain with `wasm32-unknown-unknown` target.
+
+---
+
+## Built for the XRPL Hackathon
+
+Smart Bond Return demonstrates what becomes possible when financial agreements live entirely on-chain:
+
+- **No custody risk** — funds are locked in an XRPL escrow, not a company bank account
+- **No delay** — settlement is instant the moment the notary signs
+- **No ambiguity** — the verdict and outcome are recorded permanently on the ledger
+- **No trust required** — the code enforces the agreement, not a third party
+
+The dual-escrow pattern and on-chain WASM verdict are novel primitives that could extend to any domain requiring conditional, multi-outcome fund release: insurance payouts, freelance escrow, real estate settlements, and more.
