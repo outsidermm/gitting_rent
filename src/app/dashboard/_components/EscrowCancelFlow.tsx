@@ -27,7 +27,7 @@ export function EscrowCancelFlow({ sequence }: { sequence: number }) {
       };
 
       const prepared = await client.autofill(tx);
-      const { tx_blob, hash } = wallet.sign(prepared);
+      const { tx_blob } = wallet.sign(prepared);
       const result = await client.submitAndWait(tx_blob);
 
       const meta = result.result.meta as

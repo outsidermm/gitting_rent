@@ -11,7 +11,7 @@ import {
   buildRefundEscrowCreatePayload,
   buildEscrowFinishPayload,
 } from "~/server/xrpl/payloads";
-import { verifyConditionPair } from "~/server/xrpl/condition";
+import { verifyConditionPair, generateConditionPair } from "~/server/xrpl/condition";
 
 // ─── getEscrowCreatePayload ──────────────────────────────────────────────────
 
@@ -38,15 +38,26 @@ export const getEscrowCreatePayload = publicProcedure
       });
     }
 
-    if (
-      !lease.escrowCondition ||
-      !lease.escrowFulfillment ||
-      !lease.refundEscrowCondition ||
-      !lease.refundEscrowFulfillment
-    ) {
+    if (!lease.escrowCondition || !lease.escrowFulfillment) {
       throw new TRPCError({
         code: "INTERNAL_SERVER_ERROR",
         message: "This lease cannot be processed. Please contact support.",
+      });
+    }
+
+    // Backward-compatibility: leases created before the dual-escrow change
+    // have no refund pair. Generate and persist it now so the tenant can
+    // deposit into both escrows going forward.
+    let refundCondition = lease.refundEscrowCondition;
+    let refundFulfillment = lease.refundEscrowFulfillment;
+
+    if (!refundCondition || !refundFulfillment) {
+      const pair = generateConditionPair();
+      refundCondition = pair.condition;
+      refundFulfillment = pair.fulfillment;
+      await ctx.db.lease.update({
+        where: { id: lease.id },
+        data: { refundEscrowCondition: refundCondition, refundEscrowFulfillment: refundFulfillment },
       });
     }
 
@@ -55,8 +66,8 @@ export const getEscrowCreatePayload = publicProcedure
       fulfillment: lease.escrowFulfillment,
     });
     const refundValid = verifyConditionPair({
-      condition: lease.refundEscrowCondition,
-      fulfillment: lease.refundEscrowFulfillment,
+      condition: refundCondition,
+      fulfillment: refundFulfillment,
     });
 
     if (!penaltyValid || !refundValid) {
@@ -78,7 +89,7 @@ export const getEscrowCreatePayload = publicProcedure
     const txRefund = buildRefundEscrowCreatePayload({
       tenantAddress: lease.tenantAddress,
       bondAmountDrops: lease.bondAmountDrops,
-      condition: lease.refundEscrowCondition,
+      condition: refundCondition,
     });
 
     return { txPenalty, txRefund, lease };
@@ -123,6 +134,20 @@ export const getEscrowFinishPayload = publicProcedure
     }
 
     const { escrowOwnerAddress } = lease;
+
+    // Legacy leases (created before dual-escrow) only have the penalty escrow
+    // on-chain. If the notary selects "refund" but no refund escrow exists,
+    // surface a clear message so the UI can guide them.
+    const isLegacySingleEscrow = !lease.refundEscrowSequence;
+    if (input.verdict === "refund" && isLegacySingleEscrow) {
+      throw new TRPCError({
+        code: "BAD_REQUEST",
+        message:
+          "This lease was created before dual-escrow support. The refund escrow was not deposited on-chain. " +
+          "The tenant's bond will be automatically returned after the 90-day lock period expires. " +
+          "To claim the bond for the landlord, select the Penalty option instead.",
+      });
+    }
 
     // Select escrow fields based on the notary's verdict
     const escrowSequence =
